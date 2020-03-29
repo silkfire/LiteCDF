@@ -5,5 +5,3 @@ _ReSharper.*
 bin
 obj
 packages
-/src/icon.png
-/src/LiteCDF.xml

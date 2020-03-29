@@ -23,12 +23,27 @@
         }
 
         /// <summary>
+        /// Opens a compound document for reading from a byte array.
+        /// </summary>
+        /// <param name="data">A byte array to read data from.</param>
+        public static CompoundDocument Open(byte[] data)
+        {
+            if (data == null || data.Length == 0) throw new CdfException(Errors.EmptyDataStream);
+
+            var document = new CompoundDocument();
+
+            document.Mount(data, null);
+
+            return document;
+        }
+
+        /// <summary>
         /// Opens a compound document for reading from a stream.
         /// </summary>
         /// <param name="stream">A stream to read data from.</param>
         public static CompoundDocument Open(Stream stream)
         {
-            if (stream == null || stream.Length == 0) throw new CdfException(Errors.EmptyStream);
+            if (stream == null || stream.Length == 0) throw new CdfException(Errors.EmptyDataStream);
 
             var document = new CompoundDocument();
 
@@ -51,13 +66,26 @@
         }
 
         /// <summary>
+        /// Opens a compound document for reading from a byte array and extracts the first stream whose name matches the given predicate.
+        /// </summary>
+        /// <param name="data">A byte array to read data from.</param>
+        /// <param name="streamNameMatch">A predicate applied to the name of the stream that must be satisfied to determine which stream to read.</param>
+        public static byte[] OpenAndReadStream(byte[] data, Predicate<string> streamNameMatch)
+        {
+            if (data == null || data.Length == 0) throw new CdfException(Errors.EmptyDataStream);
+            if (streamNameMatch == null) throw new CdfException(Errors.StreamNamePredicateNull);
+
+            return new CompoundDocument().Mount(data, streamNameMatch);
+        }
+
+        /// <summary>
         /// Opens a compound document for reading from a stream and extracts the first stream whose name matches the given predicate.
         /// </summary>
         /// <param name="stream">A stream to read data from.</param>
         /// <param name="streamNameMatch">A predicate applied to the name of the stream that must be satisfied to determine which stream to read.</param>
         public static byte[] OpenAndReadStream(Stream stream, Predicate<string> streamNameMatch)
         {
-            if (stream == null || stream.Length == 0) throw new CdfException(Errors.EmptyStream);
+            if (stream == null || stream.Length == 0) throw new CdfException(Errors.EmptyDataStream);
             if (streamNameMatch == null) throw new CdfException(Errors.StreamNamePredicateNull);
 
             return new CompoundDocument().Mount(stream.ToByteArray(), streamNameMatch);

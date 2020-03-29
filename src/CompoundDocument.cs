@@ -18,7 +18,7 @@
         private const ushort           HEADER_SIZE                 = 0x200;             //  0x200 = 512
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static readonly byte[] CDF_IDENTIFIER              = { 0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1 };     //  ��ࡱ�
+        private static readonly byte[] HEADER_SIGNATURE            = { 0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1 };     //  ��ࡱ�
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private const byte             SECID_SIZE                  = sizeof(int);       //  0x04 =   4
@@ -124,7 +124,7 @@
                                             out                int      firstSecIdExtendedMsat,
                                             out                int        msatExtraSectorCount)
         {
-            if (!reader.ReadSpan(8).SequenceEqual(CDF_IDENTIFIER)) throw new CdfException(Errors.HeaderSignatureMissing);
+            if (!reader.ReadSpan(8).SequenceEqual(HEADER_SIGNATURE)) throw new CdfException(Errors.HeaderSignatureMissing);
 
             reader.Position += 22;
 
@@ -328,7 +328,6 @@
 
         private byte[] ReadDirectoryEntries(ref BinaryBufferReader reader, Predicate<string> streamNameMatch, byte[] directoryStream, int[] satSecIdChain, int sectorSize, uint standardStreamSizeThreshold, int shortSectorSize, int[] ssatSecIdChain)
         {
-            byte[] shortStreamContainerStream = null;
             BinaryBufferReader shortStreamContainerStreamReader = null;
 
             var directoryStreamReader = new BinaryBufferReader(directoryStream);
@@ -339,8 +338,7 @@
 
                 var entryNameSequence = directoryStreamReader.ReadSpan(64);
 
-                var entryNameSize = directoryStreamReader.ReadUInt16();
-                entryNameSize -= 2;
+                var entryNameSize = (int)directoryStreamReader.ReadUInt16() - 2;
 
                 if (entryNameSize < 2) continue;
 
@@ -373,8 +371,8 @@
 
                         if (streamSize == 0) throw new CdfException(Errors.ShortStreamContainerStreamSizeIsZero);
 
-                        entryStream = shortStreamContainerStream = ReadEntryStream(ref reader, streamSize, firstStreamSecId, sectorSize, satSecIdChain);
-                        shortStreamContainerStreamReader = new BinaryBufferReader(shortStreamContainerStream);
+                        entryStream = ReadEntryStream(ref reader, streamSize, firstStreamSecId, sectorSize, HEADER_SIZE, satSecIdChain);
+                        shortStreamContainerStreamReader = new BinaryBufferReader(entryStream);
                     }
                 }
                 else
@@ -383,13 +381,13 @@
                     {
                         if (streamSize < standardStreamSizeThreshold)
                         {
-                            if (shortStreamContainerStream == null) throw new CdfException(Errors.NoShortStreamContainerStreamDefined);
+                            if (shortStreamContainerStreamReader == null) throw new CdfException(Errors.NoShortStreamContainerStreamDefined);
 
-                            entryStream = ReadEntryStream(ref shortStreamContainerStreamReader, streamSize, firstStreamSecId, shortSectorSize, ssatSecIdChain);
+                            entryStream = ReadEntryStream(ref shortStreamContainerStreamReader, streamSize, firstStreamSecId, shortSectorSize, 0, ssatSecIdChain);
                         }
                         else
                         {
-                            entryStream = ReadEntryStream(ref reader, streamSize, firstStreamSecId, sectorSize, satSecIdChain);
+                            entryStream = ReadEntryStream(ref reader, streamSize, firstStreamSecId, sectorSize, HEADER_SIZE, satSecIdChain);
                         }
                     }
                 }
@@ -462,7 +460,7 @@
             return directoryStream;
         }
 
-        private static byte[] ReadEntryStream(ref BinaryBufferReader reader, int streamSize, int firstStreamSecId, int sectorSize, int[] secIdChain)
+        private static byte[] ReadEntryStream(ref BinaryBufferReader reader, int streamSize, int firstStreamSecId, int sectorSize, ushort initialOffset, int[] secIdChain)
         {
             var entryStream = new byte[streamSize];
             var entryStreamWriter = new BinaryBufferWriter(entryStream);
@@ -475,7 +473,7 @@
             {
                 if (currentStreamSecId < 0) throw new CdfException(Errors.UnexpectedEndOfStream);
 
-                reader.Position = currentStreamSecId * sectorSize;
+                reader.Position = initialOffset + currentStreamSecId * sectorSize;
 
                 var bytesToRead = Math.Min(remainingBytesToRead, sectorSize);
 

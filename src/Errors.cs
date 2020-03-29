@@ -6,7 +6,7 @@
 
 
         public const string FileDoesNotExist = "File '{0}' does not exist.";
-        public const string EmptyStream = "The provided stream cannot be empty.";
+        public const string EmptyDataStream = "The provided data stream cannot be empty.";
         public const string StreamNamePredicateNull = "The provided stream name predicate cannot be null.";
         public const string HeaderSignatureMissing = "Invalid compound document, signature missing in header.";
         public const string SectorSizeTooSmall = "Standard sector size too small. " + CorruptDocumentIndication;

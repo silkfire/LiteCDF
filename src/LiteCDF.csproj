@@ -6,26 +6,13 @@
     <PackageTags>compound document ole olecdf cdf cfbf com structured storage binary</PackageTags>
     <Copyright>Copyright © 2020</Copyright>
     <PackageProjectUrl>https://github.com/silkfire/LiteCDF</PackageProjectUrl>
-    <DocumentationFile>./LiteCDF.xml</DocumentationFile>
-    <Description>A very fast compound document format (CDF) reader.</Description>
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <PackageIcon>icon.png</PackageIcon>
-    <!--<AllowUnsafeBlocks>true</AllowUnsafeBlocks>-->
+    <Description>A high performance compound document format (CDF) reader.</Description>
+    <Version>1.1.1</Version>
+    <AssemblyVersion>1.1.1.0</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Salar.BinaryBuffers" Version="1.1.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="..\LICENSE">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-    </None>
-    <None Include="icon.png">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-    </None>
   </ItemGroup>
 
 </Project>
