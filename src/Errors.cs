@@ -18,5 +18,6 @@
         public const string NoShortStreamContainerStreamDefined = "Stream requires the short-stream container stream to be read, which was not defined in the document. " + CorruptDocumentIndication;
         public const string ShortStreamContainerStreamSizeIsZero = "Size of the short-stream container stream cannot be zero. " + CorruptDocumentIndication;
         public const string UnexpectedEndOfStream = "End of data stream reached prematurely. " + CorruptDocumentIndication;
+        public const string DirectoryEntryNameTooLong = "Name of directory entry exceeds 31 characters. " + CorruptDocumentIndication;
     }
 }

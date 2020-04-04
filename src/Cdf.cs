@@ -3,7 +3,9 @@
     using Extensions;
 
     using System;
+    using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
 
 
     /// <summary>
@@ -32,7 +34,7 @@
 
             var document = new CompoundDocument();
 
-            document.Mount(data, null);
+            document.Mount(data, null, null);
 
             return document;
         }
@@ -47,7 +49,7 @@
 
             var document = new CompoundDocument();
 
-            document.Mount(stream.ToByteArray(), null);
+            document.Mount(stream.ToByteArray(), null, null);
 
             return document;
         }
@@ -62,7 +64,7 @@
             if (!File.Exists(filepath)) throw new CdfException(string.Format(Errors.FileDoesNotExist, filepath));
             if (streamNameMatch == null) throw new CdfException(Errors.StreamNamePredicateNull);
 
-            return new CompoundDocument().Mount(filepath, streamNameMatch);
+            return new CompoundDocument().Mount(filepath, streamNameMatch, true).FirstOrDefault().Value;
         }
 
         /// <summary>
@@ -75,7 +77,7 @@
             if (data == null || data.Length == 0) throw new CdfException(Errors.EmptyDataStream);
             if (streamNameMatch == null) throw new CdfException(Errors.StreamNamePredicateNull);
 
-            return new CompoundDocument().Mount(data, streamNameMatch);
+            return new CompoundDocument().Mount(data, streamNameMatch, true).FirstOrDefault().Value;
         }
 
         /// <summary>
@@ -88,7 +90,49 @@
             if (stream == null || stream.Length == 0) throw new CdfException(Errors.EmptyDataStream);
             if (streamNameMatch == null) throw new CdfException(Errors.StreamNamePredicateNull);
 
-            return new CompoundDocument().Mount(stream.ToByteArray(), streamNameMatch);
+            return new CompoundDocument().Mount(stream.ToByteArray(), streamNameMatch, true).FirstOrDefault().Value;
+        }
+
+        /// <summary>
+        /// Opens a compound document for reading from a file source and extracts all streams whose name matches the given predicate.
+        /// <para>Returns a dictionary of key-value pairs representing the name and the stream itself, respectively.</para>
+        /// </summary>
+        /// <param name="filepath">Path to the document.</param>
+        /// <param name="streamNameMatch">A predicate applied to the name of the stream that must be satisfied to determine which streams to read.</param>
+        public static Dictionary<string, byte[]> OpenAndReadMultipleStreams(string filepath, Predicate<string> streamNameMatch)
+        {
+            if (!File.Exists(filepath)) throw new CdfException(string.Format(Errors.FileDoesNotExist, filepath));
+            if (streamNameMatch == null) throw new CdfException(Errors.StreamNamePredicateNull);
+
+            return new CompoundDocument().Mount(filepath, streamNameMatch, false);
+        }
+
+        /// <summary>
+        /// Opens a compound document for reading from a file source and extracts all streams whose name matches the given predicate.
+        /// <para>Returns a dictionary of key-value pairs representing the name and the stream itself, respectively.</para>
+        /// </summary>
+        /// <param name="data">A byte array to read data from.</param>
+        /// <param name="streamNameMatch">A predicate applied to the name of the stream that must be satisfied to determine which streams to read.</param>
+        public static Dictionary<string, byte[]> OpenAndReadMultipleStreams(byte[] data, Predicate<string> streamNameMatch)
+        {
+            if (data == null || data.Length == 0) throw new CdfException(Errors.EmptyDataStream);
+            if (streamNameMatch == null) throw new CdfException(Errors.StreamNamePredicateNull);
+
+            return new CompoundDocument().Mount(data, streamNameMatch, false);
+        }
+
+        /// <summary>
+        /// Opens a compound document for reading from a file source and extracts all streams whose name matches the given predicate.
+        /// <para>Returns a dictionary of key-value pairs representing the name and the stream itself, respectively.</para>
+        /// </summary>
+        /// <param name="stream">A stream to read data from.</param>
+        /// <param name="streamNameMatch">A predicate applied to the name of the stream that must be satisfied to determine which streams to read.</param>
+        public static Dictionary<string, byte[]> OpenAndReadMultipleStreams(Stream stream, Predicate<string> streamNameMatch)
+        {
+            if (stream == null || stream.Length == 0) throw new CdfException(Errors.EmptyDataStream);
+            if (streamNameMatch == null) throw new CdfException(Errors.StreamNamePredicateNull);
+
+            return new CompoundDocument().Mount(stream.ToByteArray(), streamNameMatch, false);
         }
     }
 }

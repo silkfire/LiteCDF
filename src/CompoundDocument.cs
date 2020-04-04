@@ -6,6 +6,7 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
+    using System.Runtime.CompilerServices;
     using System.Text;
 
 
@@ -56,19 +57,19 @@
         {
             _filepath = filepath;
 
-            Mount(File.ReadAllBytes(filepath), null);
+            Mount(File.ReadAllBytes(filepath), null, null);
 
             return this;
         }
 
-        internal byte[] Mount(string filepath, Predicate<string> streamNameMatch)
+        internal Dictionary<string, byte[]> Mount(string filepath, Predicate<string> streamNameMatch, bool? returnOnFirstMatch)
         {
             _filepath = filepath;
 
-            return Mount(File.ReadAllBytes(filepath), streamNameMatch);
+            return Mount(File.ReadAllBytes(filepath), streamNameMatch, returnOnFirstMatch);
         }
 
-        internal byte[] Mount(byte[] data, Predicate<string> streamNameMatch)
+        internal Dictionary<string, byte[]> Mount(byte[] data, Predicate<string> streamNameMatch, bool? returnOnFirstMatch)
         {
             var mainReader = new BinaryBufferReader(data);
 
@@ -104,7 +105,7 @@
 
                 DirectoryEntries = new List<DirectoryEntry>(directoryStream.Length / DIRECTORY_ENTRY_SIZE);
 
-                return ReadDirectoryEntries(ref mainReader, streamNameMatch, directoryStream, satSecIdChain, sectorSize, standardStreamSizeThreshold, shortSectorSize, ssatSecIdChain);
+                return ReadDirectoryEntries(ref mainReader, streamNameMatch, returnOnFirstMatch, directoryStream, satSecIdChain, sectorSize, standardStreamSizeThreshold, shortSectorSize, ssatSecIdChain);
             }
             catch (EndOfStreamException e)
             {
@@ -326,8 +327,9 @@
             return ssatSecIdChain;
         }
 
-        private byte[] ReadDirectoryEntries(ref BinaryBufferReader reader, Predicate<string> streamNameMatch, byte[] directoryStream, int[] satSecIdChain, int sectorSize, uint standardStreamSizeThreshold, int shortSectorSize, int[] ssatSecIdChain)
+        private Dictionary<string, byte[]> ReadDirectoryEntries(ref BinaryBufferReader reader, Predicate<string> streamNameMatch, bool? returnOnFirstMatch, byte[] directoryStream, int[] satSecIdChain, int sectorSize, uint standardStreamSizeThreshold, int shortSectorSize, int[] ssatSecIdChain)
         {
+            var matchedDirectoryEntries = new Dictionary<string, byte[]>(DirectoryEntries.Capacity);
             BinaryBufferReader shortStreamContainerStreamReader = null;
 
             var directoryStreamReader = new BinaryBufferReader(directoryStream);
@@ -338,9 +340,10 @@
 
                 var entryNameSequence = directoryStreamReader.ReadSpan(64);
 
-                var entryNameSize = (int)directoryStreamReader.ReadUInt16() - 2;
+                var entryNameSize = directoryStreamReader.ReadUInt16() - 2;
 
                 if (entryNameSize < 2) continue;
+                if (entryNameSize > 62) throw new CdfException(Errors.DirectoryEntryNameTooLong);
 
 
                 var entryType = (DirectoryEntry.ObjectType)directoryStreamReader.ReadByte();
@@ -393,15 +396,18 @@
                 }
 
 
-                if (streamNameMatch != null) return entryStream;
+                if (streamNameMatch != null)
+                {
+                    matchedDirectoryEntries[entryName] = entryStream;
 
-                var entry = new DirectoryEntry(entryName, entryType, entryStream);
+                    if (returnOnFirstMatch.HasValue && returnOnFirstMatch.Value) break;
+                }
 
-                DirectoryEntries.Add(entry);
+                DirectoryEntries.Add(new DirectoryEntry(entryName, entryType, entryStream));
             }
 
 
-            return null;
+            return streamNameMatch == null ? null : matchedDirectoryEntries;
         }
 
         private static byte[] ReadDirectoryStream(ref BinaryBufferReader reader, int firstSecIdDirectoryStream, int[] satSecIdChain, int sectorSize)
@@ -460,6 +466,7 @@
             return directoryStream;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static byte[] ReadEntryStream(ref BinaryBufferReader reader, int streamSize, int firstStreamSecId, int sectorSize, ushort initialOffset, int[] secIdChain)
         {
             var entryStream = new byte[streamSize];
