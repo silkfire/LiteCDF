@@ -427,7 +427,7 @@
 
                     // https://stackoverflow.com/a/2663147/633098
 
-                    if (satSecIdChain[fast] != SECID_END_OF_CHAIN)
+                    if (fast != SECID_END_OF_CHAIN && satSecIdChain[fast] != SECID_END_OF_CHAIN)
                     {
                         fast = satSecIdChain[satSecIdChain[fast]];
                         if (currentSecIdDirectoryStream == fast) throw new CdfException(Errors.CyclicSecIdChain);
