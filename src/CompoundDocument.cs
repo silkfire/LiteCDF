@@ -1,5 +1,7 @@
 ﻿namespace LiteCDF
 {
+    using Extensions;
+
     using Salar.BinaryBuffers;
 
     using System;
@@ -57,7 +59,7 @@
         {
             _filepath = filepath;
 
-            Mount(File.ReadAllBytes(filepath), null, null);
+            Mount(StreamExtensions.ReadAllBytes(filepath), null, null);
 
             return this;
         }
@@ -66,7 +68,7 @@
         {
             _filepath = filepath;
 
-            return Mount(File.ReadAllBytes(filepath), streamNameMatch, returnOnFirstMatch);
+            return Mount(StreamExtensions.ReadAllBytes(filepath), streamNameMatch, returnOnFirstMatch);
         }
 
         internal Dictionary<string, byte[]> Mount(byte[] data, Predicate<string> streamNameMatch, bool? returnOnFirstMatch)
