@@ -19,8 +19,6 @@
         /// <param name="filepath">Path to the document.</param>
         public static CompoundDocument Open(string filepath)
         {
-            if (!File.Exists(filepath)) throw new CdfException(string.Format(Errors.FileDoesNotExist, filepath));
-
             return new CompoundDocument().Mount(filepath);
         }
 
@@ -61,7 +59,6 @@
         /// <param name="streamNameMatch">A predicate applied to the name of the stream that must be satisfied to determine which stream to read.</param>
         public static byte[] OpenAndReadStream(string filepath, Predicate<string> streamNameMatch)
         {
-            if (!File.Exists(filepath)) throw new CdfException(string.Format(Errors.FileDoesNotExist, filepath));
             if (streamNameMatch == null) throw new CdfException(Errors.StreamNamePredicateNull);
 
             return new CompoundDocument().Mount(filepath, streamNameMatch, true).FirstOrDefault().Value;
@@ -101,7 +98,6 @@
         /// <param name="streamNameMatch">A predicate applied to the name of the stream that must be satisfied to determine which streams to read.</param>
         public static Dictionary<string, byte[]> OpenAndReadMultipleStreams(string filepath, Predicate<string> streamNameMatch)
         {
-            if (!File.Exists(filepath)) throw new CdfException(string.Format(Errors.FileDoesNotExist, filepath));
             if (streamNameMatch == null) throw new CdfException(Errors.StreamNamePredicateNull);
 
             return new CompoundDocument().Mount(filepath, streamNameMatch, false);

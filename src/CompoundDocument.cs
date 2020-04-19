@@ -59,7 +59,14 @@
         {
             _filepath = filepath;
 
-            Mount(StreamExtensions.ReadAllBytes(filepath), null, null);
+            try
+            {
+                Mount(StreamExtensions.ReadAllBytes(filepath), null, null);
+            }
+            catch (FileNotFoundException e)
+            {
+                throw new CdfException(e.Message);
+            }
 
             return this;
         }
@@ -68,7 +75,14 @@
         {
             _filepath = filepath;
 
-            return Mount(StreamExtensions.ReadAllBytes(filepath), streamNameMatch, returnOnFirstMatch);
+            try
+            {
+                return Mount(StreamExtensions.ReadAllBytes(filepath), streamNameMatch, returnOnFirstMatch);
+            }
+            catch (FileNotFoundException e)
+            {
+                throw new CdfException(e.Message);
+            }
         }
 
         internal Dictionary<string, byte[]> Mount(byte[] data, Predicate<string> streamNameMatch, bool? returnOnFirstMatch)

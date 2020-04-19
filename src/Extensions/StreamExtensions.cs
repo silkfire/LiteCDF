@@ -9,7 +9,7 @@
     /// <summary>
     /// A collection of convenience methods for working wtih streams.
     /// </summary>
-    public static class StreamExtensions
+    internal static class StreamExtensions
     {
         private const int MaxByteArrayLength = 0x7FFFFFC7;
 

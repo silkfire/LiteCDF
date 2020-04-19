@@ -5,7 +5,6 @@
         private const string CorruptDocumentIndication = "This is an indication that the compound document is invalid or corrupt.";
 
 
-        public const string FileDoesNotExist = "File '{0}' does not exist.";
         public const string EmptyDataStream = "The provided data stream cannot be empty.";
         public const string StreamNamePredicateNull = "The provided stream name predicate cannot be null.";
         public const string HeaderSignatureMissing = "Invalid compound document, signature missing in header.";
