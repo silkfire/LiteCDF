@@ -1,8 +1,7 @@
 ﻿namespace LiteCDF
 {
-    using Extensions;
-
     using Salar.BinaryBuffers;
+    using StreamExtensions;
 
     using System;
     using System.Collections.Generic;

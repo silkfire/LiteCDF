@@ -1,6 +1,6 @@
 ﻿namespace LiteCDF
 {
-    using Extensions;
+    using StreamExtensions;
 
     using System;
     using System.Collections.Generic;
