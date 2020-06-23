@@ -368,7 +368,7 @@
 
                 var entryName = Encoding.Unicode.GetString(entryNameSequence.Slice(0, entryNameSize));
 
-                if (streamNameMatch != null && !streamNameMatch(entryName)) continue;
+                if (i > 0 && streamNameMatch != null && !streamNameMatch(entryName)) continue;
 
 
                 directoryStreamReader.Position += 49;
@@ -411,7 +411,7 @@
                 }
 
 
-                if (streamNameMatch != null)
+                if (streamNameMatch != null && streamNameMatch(entryName))
                 {
                     matchedDirectoryEntries[entryName] = entryStream;
 
@@ -578,7 +578,7 @@
             /// Returns the name of the directory entry.
             /// </summary>
             /// <returns></returns>
-            public override string ToString() => Name;
+            public override string ToString() => $"{Name} | {Stream.Length} byte{(Stream.Length != 0 ? "s" : "")}";
         }
     }
 }

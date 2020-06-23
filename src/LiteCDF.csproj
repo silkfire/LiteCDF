@@ -7,9 +7,9 @@
     <Copyright>Copyright © 2020</Copyright>
     <PackageProjectUrl>https://github.com/silkfire/LiteCDF</PackageProjectUrl>
     <Description>A high performance compound document format (CDF) reader.</Description>
-    <Version>1.2.6</Version>
-    <AssemblyVersion>1.2.6.0</AssemblyVersion>
-    <PackageReleaseNotes>1.2.3 Files can now be opened even when they are in use</PackageReleaseNotes>
+    <Version>1.2.7</Version>
+    <AssemblyVersion>1.2.7.0</AssemblyVersion>
+    <PackageReleaseNotes>1.2.7 Fixed a bug that would occur when reading short-stream entries by use of a name-matching predicate</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
