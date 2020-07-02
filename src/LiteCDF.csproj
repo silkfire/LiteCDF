@@ -7,14 +7,14 @@
     <Copyright>Copyright © 2020</Copyright>
     <PackageProjectUrl>https://github.com/silkfire/LiteCDF</PackageProjectUrl>
     <Description>A high performance compound document format (CDF) reader.</Description>
-    <Version>1.2.7</Version>
-    <AssemblyVersion>1.2.7.0</AssemblyVersion>
+    <Version>1.2.8</Version>
+    <AssemblyVersion>1.2.8.0</AssemblyVersion>
     <PackageReleaseNotes>1.2.7 Fixed a bug that would occur when reading short-stream entries by use of a name-matching predicate</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Salar.BinaryBuffers" Version="1.1.0" />
-    <PackageReference Include="StreamExtensions" Version="1.0.2" />
+    <PackageReference Include="StreamExtensions" Version="1.0.3" />
   </ItemGroup>
 
 </Project>
