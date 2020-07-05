@@ -7,6 +7,7 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
+    using System.Linq;
     using System.Runtime.CompilerServices;
     using System.Text;
 
@@ -54,13 +55,13 @@
 
 
 
-        internal CompoundDocument Mount(string filepath)
+        internal CompoundDocument Mount(string filepath, bool rootStorageDescendantsOnly)
         {
             _filepath = filepath;
 
             try
             {
-                Mount(StreamExtensions.ReadAllBytes(filepath), null, null);
+                Mount(StreamExtensions.ReadAllBytes(filepath), null, null, rootStorageDescendantsOnly);
             }
             catch (FileNotFoundException e)
             {
@@ -70,13 +71,13 @@
             return this;
         }
 
-        internal Dictionary<string, byte[]> Mount(string filepath, Predicate<string> streamNameMatch, bool? returnOnFirstMatch)
+        internal Dictionary<string, byte[]> Mount(string filepath, Predicate<string> streamNameMatch, bool? returnOnFirstMatch, bool rootStorageDescendantsOnly)
         {
             _filepath = filepath;
 
             try
             {
-                return Mount(StreamExtensions.ReadAllBytes(filepath), streamNameMatch, returnOnFirstMatch);
+                return Mount(StreamExtensions.ReadAllBytes(filepath), streamNameMatch, returnOnFirstMatch, rootStorageDescendantsOnly);
             }
             catch (FileNotFoundException e)
             {
@@ -84,7 +85,7 @@
             }
         }
 
-        internal Dictionary<string, byte[]> Mount(byte[] data, Predicate<string> streamNameMatch, bool? returnOnFirstMatch)
+        internal Dictionary<string, byte[]> Mount(byte[] data, Predicate<string> streamNameMatch, bool? returnOnFirstMatch, bool rootStorageDescendantsOnly)
         {
             var mainReader = new BinaryBufferReader(data);
 
@@ -106,21 +107,42 @@
 
                 var secIdsPerSector = sectorSize / SECID_SIZE;
 
-                var satSecIdChain = BuildSatSecIdChain(ref mainReader, msatExtraSectorCount, firstSecIdExtendedMsat, satSectorCount, sectorSize, secIdsPerSector);
+                var satSecIdChain = BuildSatSecIdChain(mainReader, msatExtraSectorCount, firstSecIdExtendedMsat, satSectorCount, sectorSize, secIdsPerSector);
 
 
                 // Short-Sector Allocation Table (SSAT)
 
-                var ssatSecIdChain = BuildSsatSecIdChain(ref mainReader, ssatSectorCount, satSecIdChain, firstSecIdSsat, sectorSize, secIdsPerSector);
+                var ssatSecIdChain = BuildSsatSecIdChain(mainReader, ssatSectorCount, satSecIdChain, firstSecIdSsat, sectorSize, secIdsPerSector);
 
 
                 // Directory
 
-                var directoryStream = ReadDirectoryStream(ref mainReader, firstSecIdDirectoryStream, satSecIdChain, sectorSize);
+                var directoryStream = ReadDirectoryStream(mainReader, firstSecIdDirectoryStream, satSecIdChain, sectorSize);
 
                 DirectoryEntries = new List<DirectoryEntry>(directoryStream.Length / DIRECTORY_ENTRY_SIZE);
 
-                return ReadDirectoryEntries(ref mainReader, streamNameMatch, returnOnFirstMatch, directoryStream, satSecIdChain, sectorSize, standardStreamSizeThreshold, shortSectorSize, ssatSecIdChain);
+                if (rootStorageDescendantsOnly)
+                {
+                    ReadDirectoryEntries(mainReader, null, null, directoryStream, satSecIdChain, sectorSize, standardStreamSizeThreshold, shortSectorSize, ssatSecIdChain);
+
+                    VisitEntries();
+
+                    if (streamNameMatch != null)
+                    {
+                        if (returnOnFirstMatch.HasValue && returnOnFirstMatch.Value)
+                        {
+                            var matchedDirectoryEntry = DirectoryEntries.FirstOrDefault(de => streamNameMatch(de.Name));
+
+                            return matchedDirectoryEntry != null ? new Dictionary<string, byte[]> { [matchedDirectoryEntry.Name] = matchedDirectoryEntry.Stream } : new Dictionary<string, byte[]>();
+                        }
+
+                        return DirectoryEntries.Where(de => streamNameMatch(de.Name)).ToDictionary(de => de.Name, de => de.Stream);
+                    }
+
+                    return null;
+                }
+
+                return ReadDirectoryEntries(mainReader, streamNameMatch, returnOnFirstMatch, directoryStream, satSecIdChain, sectorSize, standardStreamSizeThreshold, shortSectorSize, ssatSecIdChain);
             }
             catch (EndOfStreamException e)
             {
@@ -128,6 +150,39 @@
             }
         }
 
+        private void VisitEntries()
+        {
+            if (DirectoryEntries[0].RootNodeEntryDirId > 0)
+            {
+                var visitId = 0;
+
+                VisitEntries(DirectoryEntries[0].RootNodeEntryDirId, ref visitId);
+
+                DirectoryEntries = DirectoryEntries.Where(de => de.IsRootStorageDescendant)
+                                                   .OrderBy(de => de.VisitId)
+                                                   .ToList();
+            }
+        }
+
+        private void VisitEntries(int directoryEntryId, ref int visitId)
+        {
+            if (directoryEntryId >= DirectoryEntries.Count) throw new CdfException(string.Format(Errors.ReferredChildDirectoryEntryMissing, directoryEntryId));
+            if (DirectoryEntries[directoryEntryId].VisitId.HasValue) throw new CdfException(Errors.CyclicChildDirectoryEntryReference);
+
+
+            DirectoryEntries[directoryEntryId].IsRootStorageDescendant = true;
+            DirectoryEntries[directoryEntryId].VisitId = ++visitId;
+
+            if (DirectoryEntries[directoryEntryId].RightChildDirId > 0)
+            {
+                VisitEntries(DirectoryEntries[directoryEntryId].RightChildDirId, ref visitId);
+            }
+
+            if (DirectoryEntries[directoryEntryId].LeftChildDirId > 0)
+            {
+                VisitEntries(DirectoryEntries[directoryEntryId].LeftChildDirId, ref visitId);
+            }
+        }
 
         private static void GetHeaderValues(ref BinaryBufferReader                      reader,
                                             out                int                  sectorSize,
@@ -166,7 +221,7 @@
             msatExtraSectorCount = reader.ReadInt32();
         }
 
-        private static int[] BuildSatSecIdChain(ref BinaryBufferReader reader, int msatExtraSectorCount, int firstSecIdExtendedMsat, int satSectorCount, int sectorSize, int secIdsPerSector)
+        private static int[] BuildSatSecIdChain(BinaryBufferReader reader, int msatExtraSectorCount, int firstSecIdExtendedMsat, int satSectorCount, int sectorSize, int secIdsPerSector)
         {
 #if DEBUG
             var msat = new int[1 + msatExtraSectorCount + 1];
@@ -291,7 +346,7 @@
             return satSecIdChain;
         }
 
-        private static int[] BuildSsatSecIdChain(ref BinaryBufferReader reader, uint ssatSectorCount, int[] satSecIdChain, int firstSecIdSsat, int sectorSize, int secIdsPerSector)
+        private static int[] BuildSsatSecIdChain(BinaryBufferReader reader, uint ssatSectorCount, int[] satSecIdChain, int firstSecIdSsat, int sectorSize, int secIdsPerSector)
         {
             int[] ssatSecIdChain = null;
 
@@ -342,7 +397,7 @@
             return ssatSecIdChain;
         }
 
-        private Dictionary<string, byte[]> ReadDirectoryEntries(ref BinaryBufferReader reader, Predicate<string> streamNameMatch, bool? returnOnFirstMatch, byte[] directoryStream, int[] satSecIdChain, int sectorSize, uint standardStreamSizeThreshold, int shortSectorSize, int[] ssatSecIdChain)
+        private Dictionary<string, byte[]> ReadDirectoryEntries(BinaryBufferReader reader, Predicate<string> streamNameMatch, bool? returnOnFirstMatch, byte[] directoryStream, int[] satSecIdChain, int sectorSize, uint standardStreamSizeThreshold, int shortSectorSize, int[] ssatSecIdChain)
         {
             var matchedDirectoryEntries = new Dictionary<string, byte[]>(DirectoryEntries.Capacity);
             BinaryBufferReader shortStreamContainerStreamReader = null;
@@ -357,21 +412,27 @@
 
                 var entryNameSize = directoryStreamReader.ReadUInt16() - 2;
 
-                if (entryNameSize < 2) continue;
+                //if (entryNameSize < 2) continue;
                 if (entryNameSize > 62) throw new CdfException(Errors.DirectoryEntryNameTooLong);
 
 
-                var entryType = (DirectoryEntry.ObjectType)directoryStreamReader.ReadByte();
+                var entryType = (DirectoryEntry.EntryType)directoryStreamReader.ReadByte();
 
-                if (!Enum.IsDefined(typeof(DirectoryEntry.ObjectType), entryType) || entryType == DirectoryEntry.ObjectType.Empty) continue;
+                //if (!Enum.IsDefined(typeof(DirectoryEntry.ObjectType), entryType) || entryType == DirectoryEntry.ObjectType.Empty) continue;
 
 
-                var entryName = Encoding.Unicode.GetString(entryNameSequence.Slice(0, entryNameSize));
+                var entryName = entryNameSize < 2 ? null : Encoding.Unicode.GetString(entryNameSequence.Slice(0, entryNameSize));
 
                 if (i > 0 && streamNameMatch != null && !streamNameMatch(entryName)) continue;
 
 
-                directoryStreamReader.Position += 49;
+                directoryStreamReader.Position += 1;
+
+                var leftChildDirId = directoryStreamReader.ReadInt32();
+                var rightChildDirId = directoryStreamReader.ReadInt32();
+                var rootNodeEntryDirId = directoryStreamReader.ReadInt32();
+
+                directoryStreamReader.Position += 36;
 
                 var firstStreamSecId = directoryStreamReader.ReadInt32();
                 var streamSize = (int)directoryStreamReader.ReadUInt32();
@@ -381,7 +442,7 @@
 
                 if (i == 0)
                 {
-                    if (entryType != DirectoryEntry.ObjectType.RootStorage) throw new CdfException(Errors.FirstDirectoryEntryMustBeRootStorage);
+                    if (entryType != DirectoryEntry.EntryType.RootStorage) throw new CdfException(Errors.FirstDirectoryEntryMustBeRootStorage);
 
                     if (ssatSecIdChain != null)
                     {
@@ -389,7 +450,7 @@
 
                         if (streamSize == 0) throw new CdfException(Errors.ShortStreamContainerStreamSizeIsZero);
 
-                        entryStream = ReadEntryStream(ref reader, streamSize, firstStreamSecId, sectorSize, HEADER_SIZE, satSecIdChain);
+                        entryStream = ReadEntryStream(reader, streamSize, firstStreamSecId, sectorSize, HEADER_SIZE, satSecIdChain);
                         shortStreamContainerStreamReader = new BinaryBufferReader(entryStream);
                     }
                 }
@@ -401,31 +462,31 @@
                         {
                             if (shortStreamContainerStreamReader == null) throw new CdfException(Errors.NoShortStreamContainerStreamDefined);
 
-                            entryStream = ReadEntryStream(ref shortStreamContainerStreamReader, streamSize, firstStreamSecId, shortSectorSize, 0, ssatSecIdChain);
+                            entryStream = ReadEntryStream(shortStreamContainerStreamReader, streamSize, firstStreamSecId, shortSectorSize, 0, ssatSecIdChain);
                         }
                         else
                         {
-                            entryStream = ReadEntryStream(ref reader, streamSize, firstStreamSecId, sectorSize, HEADER_SIZE, satSecIdChain);
+                            entryStream = ReadEntryStream(reader, streamSize, firstStreamSecId, sectorSize, HEADER_SIZE, satSecIdChain);
                         }
                     }
                 }
 
 
-                if (streamNameMatch != null && streamNameMatch(entryName))
+                if (entryName != null && streamNameMatch != null && streamNameMatch(entryName))
                 {
                     matchedDirectoryEntries[entryName] = entryStream;
 
                     if (returnOnFirstMatch.HasValue && returnOnFirstMatch.Value) break;
                 }
 
-                DirectoryEntries.Add(new DirectoryEntry(entryName, entryType, entryStream));
+                DirectoryEntries.Add(new DirectoryEntry(DirectoryEntries.Count, entryName, entryType, entryStream) { LeftChildDirId = leftChildDirId, RightChildDirId = rightChildDirId, RootNodeEntryDirId = rootNodeEntryDirId });
             }
 
 
             return streamNameMatch == null ? null : matchedDirectoryEntries;
         }
 
-        private static byte[] ReadDirectoryStream(ref BinaryBufferReader reader, int firstSecIdDirectoryStream, int[] satSecIdChain, int sectorSize)
+        private static byte[] ReadDirectoryStream(BinaryBufferReader reader, int firstSecIdDirectoryStream, int[] satSecIdChain, int sectorSize)
         {
             var directorySectorCount = 0;
 
@@ -482,7 +543,7 @@
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static byte[] ReadEntryStream(ref BinaryBufferReader reader, int streamSize, int firstStreamSecId, int sectorSize, ushort initialOffset, int[] secIdChain)
+        private static byte[] ReadEntryStream(BinaryBufferReader reader, int streamSize, int firstStreamSecId, int sectorSize, ushort initialOffset, int[] secIdChain)
         {
             var entryStream = new byte[streamSize];
             var entryStreamWriter = new BinaryBufferWriter(entryStream);
@@ -523,15 +584,28 @@
         public class DirectoryEntry
         {
             /// <summary>
+            /// Original ID of the directory entry, based on its position within the directory stream.
+            /// </summary>
+            public int Id { get; }
+
+            /// <summary>
             /// Name of the directory entry.
             /// </summary>
             public string Name { get; }
 
             /// <summary>
             /// Type of the directory entry.
-            /// <para>This could be a <see langword="stream"/> (file), <see langword="storage"/> (directory) or <see langword="root storage"/> (internal).</para>
+            /// <para>This could be a <see langword="stream"/> (file), a <see langword="storage"/> (directory) or the <see langword="root storage"/> (internal).</para>
             /// </summary>
-            public ObjectType Type { get; }
+            public EntryType Type { get; }
+
+            internal int LeftChildDirId { get; set; }
+            internal int RightChildDirId { get; set; }
+            internal int RootNodeEntryDirId { get; set; }
+            internal int? VisitId { get; set; }
+            public bool IsRootStorageDescendant { get; internal set; }
+
+
 
             /// <summary>
             /// If the directory entry represents a <see langword="stream"/>, this property contains its data as a raw byte array.
@@ -539,8 +613,9 @@
             public byte[] Stream { get; }
 
 
-            internal DirectoryEntry(string name, ObjectType type, byte[] stream)
+            internal DirectoryEntry(int id, string name, EntryType type, byte[] stream)
             {
+                Id = id;
                 Name = name;
                 Type = type;
                 Stream = stream;
@@ -549,9 +624,9 @@
 
             /// <summary>
             /// Type of the directory entry.
-            /// <para>This could be a <see langword="stream"/> (file), <see langword="storage"/> (directory) or <see langword="root storage"/> (internal).</para>
+            /// <para>This could be a <see langword="stream"/> (file), a <see langword="storage"/> (directory) or the <see langword="root storage"/> (internal).</para>
             /// </summary>
-            public enum ObjectType : byte
+            public enum EntryType : byte
             {
                 /// <summary>
                 /// Indicates an unknown or unassigned entry type.
@@ -578,7 +653,7 @@
             /// Returns the name of the directory entry.
             /// </summary>
             /// <returns></returns>
-            public override string ToString() => $"{Name} | {Stream.Length} byte{(Stream.Length != 0 ? "s" : "")}";
+            public override string ToString() => $"{Name ?? "<empty>"} {(Type == EntryType.Storage ? "<STORAGE>" : $"| {(Stream != null ? $"{Stream.Length} byte{(Stream.Length != 0 ? "s" : "")}" : "<empty>")}")}";
         }
     }
 }

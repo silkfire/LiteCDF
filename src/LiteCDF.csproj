@@ -7,9 +7,9 @@
     <Copyright>Copyright © 2020</Copyright>
     <PackageProjectUrl>https://github.com/silkfire/LiteCDF</PackageProjectUrl>
     <Description>A high performance compound document format (CDF) reader.</Description>
-    <Version>1.2.8</Version>
-    <AssemblyVersion>1.2.8.0</AssemblyVersion>
-    <PackageReleaseNotes>1.2.7 Fixed a bug that would occur when reading short-stream entries by use of a name-matching predicate</PackageReleaseNotes>
+    <Version>1.3.0</Version>
+    <AssemblyVersion>1.3.0.0</AssemblyVersion>
+    <PackageReleaseNotes>1.3.0 Added an option to only read directory entries that are descendants of the root storage</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>

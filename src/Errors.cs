@@ -18,5 +18,7 @@
         public const string ShortStreamContainerStreamSizeIsZero = "Size of the short-stream container stream cannot be zero. " + CorruptDocumentIndication;
         public const string UnexpectedEndOfStream = "End of data stream reached prematurely. " + CorruptDocumentIndication;
         public const string DirectoryEntryNameTooLong = "Name of directory entry exceeds 31 characters. " + CorruptDocumentIndication;
+        public const string ReferredChildDirectoryEntryMissing = "The referred child directory entry (with ID {0}) does not exist." + CorruptDocumentIndication;
+        public const string CyclicChildDirectoryEntryReference = "Cyclic reference: The referred child directory entry (with ID {0}) has already been visited." + CorruptDocumentIndication;
     }
 }
