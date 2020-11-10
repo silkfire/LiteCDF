@@ -150,6 +150,7 @@
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void VisitEntries()
         {
             if (DirectoryEntries[0].RootNodeEntryDirId > 0)
@@ -184,6 +185,7 @@
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void GetHeaderValues(ref BinaryBufferReader                      reader,
                                             out                int                  sectorSize,
                                             out                int             shortSectorSize,
@@ -221,6 +223,7 @@
             msatExtraSectorCount = reader.ReadInt32();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int[] BuildSatSecIdChain(BinaryBufferReader reader, int msatExtraSectorCount, int firstSecIdExtendedMsat, int satSectorCount, int sectorSize, int secIdsPerSector)
         {
 #if DEBUG
@@ -346,6 +349,7 @@
             return satSecIdChain;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int[] BuildSsatSecIdChain(BinaryBufferReader reader, uint ssatSectorCount, int[] satSecIdChain, int firstSecIdSsat, int sectorSize, int secIdsPerSector)
         {
             int[] ssatSecIdChain = null;
@@ -397,6 +401,7 @@
             return ssatSecIdChain;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private Dictionary<string, byte[]> ReadDirectoryEntries(BinaryBufferReader reader, Predicate<string> streamNameMatch, bool? returnOnFirstMatch, byte[] directoryStream, int[] satSecIdChain, int sectorSize, uint standardStreamSizeThreshold, int shortSectorSize, int[] ssatSecIdChain)
         {
             var matchedDirectoryEntries = new Dictionary<string, byte[]>(DirectoryEntries.Capacity);
@@ -486,6 +491,7 @@
             return streamNameMatch == null ? null : matchedDirectoryEntries;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static byte[] ReadDirectoryStream(BinaryBufferReader reader, int firstSecIdDirectoryStream, int[] satSecIdChain, int sectorSize)
         {
             var directorySectorCount = 0;
