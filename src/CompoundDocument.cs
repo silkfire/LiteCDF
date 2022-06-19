@@ -1,6 +1,6 @@
 ﻿namespace LiteCDF
 {
-    using Salar.BinaryBuffers;
+    using BinaryBuffers;
     using StreamExtensions;
 
     using System;
@@ -609,6 +609,10 @@
             internal int RightChildDirId { get; set; }
             internal int RootNodeEntryDirId { get; set; }
             internal int? VisitId { get; set; }
+
+            /// <summary>
+            /// Indicates whether this directory entry is a direct descendant of the root storage.
+            /// </summary>
             public bool IsRootStorageDescendant { get; internal set; }
 
 
