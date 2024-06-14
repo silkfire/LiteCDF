@@ -1,6 +1,6 @@
 # LiteCDF
 
-![logo](https://github.com/silkfire/LiteCDF/raw/master/img/logo.png)
+![logo](https://raw.githubusercontent.com/silkfire/LiteCDF/master/img/logo.png)
 
 [![NuGet](https://img.shields.io/nuget/v/LiteCDF.svg)](https://www.nuget.org/packages/LiteCDF)
 

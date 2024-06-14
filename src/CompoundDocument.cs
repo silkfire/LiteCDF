@@ -636,17 +636,17 @@
             /// Type of the directory entry.
             /// <para>This could be a <see langword="stream"/> (file), a <see langword="storage"/> (directory) or the <see langword="root storage"/> (internal).</para>
             /// </summary>
-            public enum EntryType : byte
+            public enum EntryType
             {
                 /// <summary>
                 /// Indicates an unknown or unassigned entry type.
                 /// </summary>
-                Empty       = 0,
+                Empty = 0,
 
                 /// <summary>
                 /// Indicates a storage (directory).
                 /// </summary>
-                Storage     = 1,
+                Storage = 1,
 
                 /// <summary>
                 /// Indicates a stream (file).
