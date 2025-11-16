@@ -1,20 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Authors>Gabriel Bider</Authors>
     <PackageTags>compound document ole olecdf cdf cfbf com structured storage binary</PackageTags>
-    <Copyright>Copyright © 2024</Copyright>
+    <Copyright>Copyright © 2026</Copyright>
     <PackageProjectUrl>https://github.com/silkfire/LiteCDF</PackageProjectUrl>
     <Description>A high performance compound document format (CDF) reader.</Description>
-    <Version>4.0.0</Version>
-    <AssemblyVersion>4.0.0.0</AssemblyVersion>
-    <PackageReleaseNotes>4.0.0 Now only supports .NET 8</PackageReleaseNotes>
+    <Version>5.0.0</Version>
+    <AssemblyVersion>5.0.0.0</AssemblyVersion>
+    <PackageReleaseNotes>5.0.0 Now only supports .NET 10</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BinaryBuffers" Version="3.0.1" />
-    <PackageReference Include="StreamExtensions" Version="3.0.0" />
+    <PackageReference Include="BinaryBuffers" Version="4.0.0" />
+    <PackageReference Include="StreamExtensions" Version="4.0.0" />
   </ItemGroup>
 
 </Project>
