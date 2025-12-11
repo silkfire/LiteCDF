@@ -7,13 +7,13 @@
     <Copyright>Copyright © 2026</Copyright>
     <PackageProjectUrl>https://github.com/silkfire/LiteCDF</PackageProjectUrl>
     <Description>A high performance compound document format (CDF) reader.</Description>
-    <Version>5.0.0</Version>
-    <AssemblyVersion>5.0.0.0</AssemblyVersion>
-    <PackageReleaseNotes>5.0.0 Now only supports .NET 10</PackageReleaseNotes>
+    <Version>5.1.1</Version>
+    <AssemblyVersion>5.1.1.0</AssemblyVersion>
+    <PackageReleaseNotes>5.1.1 Performance improvements</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BinaryBuffers" Version="4.0.0" />
+    <PackageReference Include="BinaryBuffers" Version="4.1.0" />
     <PackageReference Include="StreamExtensions" Version="4.0.0" />
   </ItemGroup>
 
