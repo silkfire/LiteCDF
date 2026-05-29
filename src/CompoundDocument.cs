@@ -136,7 +136,7 @@ public class CompoundDocument
                     {
                         var matchedDirectoryEntry = DirectoryEntries.FirstOrDefault(de => streamNameMatch(de.Name));
 
-                        return matchedDirectoryEntry != null ? new Dictionary<string, byte[]> { [matchedDirectoryEntry.Name] = matchedDirectoryEntry.Stream } : new Dictionary<string, byte[]>();
+                        return matchedDirectoryEntry != null ? new Dictionary<string, byte[]> { [matchedDirectoryEntry.Name] = matchedDirectoryEntry.Stream } : [];
                     }
 
                     return DirectoryEntries.Where(de => streamNameMatch(de.Name)).ToDictionary(de => de.Name, de => de.Stream);
@@ -433,13 +433,9 @@ public class CompoundDocument
         {
             if (isShortStream)
             {
-                var rootStorageStream = DirectoryEntries[0].Stream;
-                if (rootStorageStream == null)
-                {
-                    throw new CdfException(Errors.NoShortStreamContainerStreamDefined);
-                }
-
+                var rootStorageStream = DirectoryEntries[0].Stream ?? throw new CdfException(Errors.NoShortStreamContainerStreamDefined);
                 var reader = new BinaryBufferReader(rootStorageStream);
+                
                 return ReadEntryStream(reader, size, startSector, _shortSectorSize, 0, _ssatSecIdChain);
             }
             else
@@ -459,7 +455,7 @@ public class CompoundDocument
             for (var i = 0; i < DirectoryEntries.Capacity; i++)
             {
                 var sectorIndex = i / entriesPerSector;
-                var entryOffsetInSector = (i % entriesPerSector) * DIRECTORY_ENTRY_SIZE;
+                var entryOffsetInSector = i % entriesPerSector * DIRECTORY_ENTRY_SIZE;
                 var sectorId = directorySecIdChain[sectorIndex];
 
                 reader.Position = HEADER_SIZE + sectorId * _sectorSize + entryOffsetInSector;
