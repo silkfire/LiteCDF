@@ -1,0 +1,181 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>LiteCDF</name>
+    </assembly>
+    <members>
+        <member name="T:LiteCDF.Cdf">
+            <summary>
+            A static class for reading compound documents.
+            </summary>
+        </member>
+        <member name="M:LiteCDF.Cdf.Open(System.String,System.Boolean)">
+            <summary>
+            Opens a compound document for reading from a file source.
+            </summary>
+            <param name="filepath">Path to the document.</param>
+            <param name="rootStorageDescendantsOnly">If <see langword="true"/>, will only return entries that are descendants of the root storage.</param>
+        </member>
+        <member name="M:LiteCDF.Cdf.Open(System.Byte[],System.Boolean)">
+            <summary>
+            Opens a compound document for reading from a byte array.
+            </summary>
+            <param name="data">A byte array to read data from.</param>
+            <param name="rootStorageDescendantsOnly">If <see langword="true"/>, will only return entries that are descendants of the root storage.</param>
+        </member>
+        <member name="M:LiteCDF.Cdf.Open(System.IO.Stream,System.Boolean)">
+            <summary>
+            Opens a compound document for reading from a stream.
+            </summary>
+            <param name="stream">A stream to read data from.</param>
+            <param name="rootStorageDescendantsOnly">If <see langword="true"/>, will only return entries that are descendants of the root storage.</param>
+        </member>
+        <member name="M:LiteCDF.Cdf.OpenAndReadStream(System.String,System.Predicate{System.String},System.Boolean)">
+            <summary>
+            Opens a compound document for reading from a file source and extracts the first stream whose name matches the given predicate.
+            </summary>
+            <param name="filepath">Path to the document.</param>
+            <param name="streamNameMatch">A predicate applied to the name of the stream that must be satisfied to determine which stream to read.</param>
+            <param name="rootStorageDescendantOnly">If <see langword="true"/>, will only return the stream if it also is a descendant of the root storage.</param>
+        </member>
+        <member name="M:LiteCDF.Cdf.OpenAndReadStream(System.Byte[],System.Predicate{System.String},System.Boolean)">
+            <summary>
+            Opens a compound document for reading from a byte array and extracts the first stream whose name matches the given predicate.
+            </summary>
+            <param name="data">A byte array to read data from.</param>
+            <param name="streamNameMatch">A predicate applied to the name of the stream that must be satisfied to determine which stream to read.</param>
+            <param name="rootStorageDescendantOnly">If <see langword="true"/>, will only return the stream if it also is a descendant of the root storage.</param>
+        </member>
+        <member name="M:LiteCDF.Cdf.OpenAndReadStream(System.IO.Stream,System.Predicate{System.String},System.Boolean)">
+            <summary>
+            Opens a compound document for reading from a stream and extracts the first stream whose name matches the given predicate.
+            </summary>
+            <param name="stream">A stream to read data from.</param>
+            <param name="streamNameMatch">A predicate applied to the name of the stream that must be satisfied to determine which stream to read.</param>
+            <param name="rootStorageDescendantOnly">If <see langword="true"/>, will only return the stream if it also is a descendant of the root storage.</param>
+        </member>
+        <member name="M:LiteCDF.Cdf.OpenAndReadMultipleStreams(System.String,System.Predicate{System.String},System.Boolean)">
+            <summary>
+            Opens a compound document for reading from a file source and extracts all streams whose name matches the given predicate.
+            <para>Returns a dictionary of key-value pairs representing the name and the stream itself, respectively.</para>
+            </summary>
+            <param name="filepath">Path to the document.</param>
+            <param name="streamNameMatch">A predicate applied to the name of the stream that must be satisfied to determine which streams to read.</param>
+            <param name="rootStorageDescendantsOnly">If <see langword="true"/>, will only return entries that are descendants of the root storage.</param>
+        </member>
+        <member name="M:LiteCDF.Cdf.OpenAndReadMultipleStreams(System.Byte[],System.Predicate{System.String},System.Boolean)">
+            <summary>
+            Opens a compound document for reading from a file source and extracts all streams whose name matches the given predicate.
+            <para>Returns a dictionary of key-value pairs representing the name and the stream itself, respectively.</para>
+            </summary>
+            <param name="data">A byte array to read data from.</param>
+            <param name="streamNameMatch">A predicate applied to the name of the stream that must be satisfied to determine which streams to read.</param>
+            <param name="rootStorageDescendantsOnly">If <see langword="true"/>, will only return entries that are descendants of the root storage.</param>
+        </member>
+        <member name="M:LiteCDF.Cdf.OpenAndReadMultipleStreams(System.IO.Stream,System.Predicate{System.String},System.Boolean)">
+            <summary>
+            Opens a compound document for reading from a file source and extracts all streams whose name matches the given predicate.
+            <para>Returns a dictionary of key-value pairs representing the name and the stream itself, respectively.</para>
+            </summary>
+            <param name="stream">A stream to read data from.</param>
+            <param name="streamNameMatch">A predicate applied to the name of the stream that must be satisfied to determine which streams to read.</param>
+            <param name="rootStorageDescendantsOnly">If <see langword="true"/>, will only return entries that are descendants of the root storage.</param>
+        </member>
+        <member name="T:LiteCDF.CdfException">
+            <summary>
+            Represents an error that occurs during the reading of a compound document.
+            </summary>
+        </member>
+        <member name="M:LiteCDF.CdfException.#ctor(System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:LiteCDF.CdfException"/> class with a specified error message.
+            </summary>
+            <param name="message">The message that describes the error.</param>
+        </member>
+        <member name="M:LiteCDF.CdfException.#ctor(System.String,System.Exception)">
+            <summary>
+            Initializes a new instance of the <see cref="T:LiteCDF.CdfException"/> class with a specified error message and a reference to the inner exception that is the cause of this exception.
+            </summary>
+            <param name="message">The message that describes the error.</param>
+            <param name="innerException">The exception that is the cause of the current exception or a <see langword="null"/> reference if no exception is specified.</param>
+        </member>
+        <member name="T:LiteCDF.CompoundDocument">
+            <summary>
+            Represents a compound document.
+            </summary>
+        </member>
+        <member name="P:LiteCDF.CompoundDocument.DirectoryEntries">
+            <summary>
+            The directory entries contained in this compound document.
+            </summary>
+        </member>
+        <member name="M:LiteCDF.CompoundDocument.ToString">
+            <summary>
+            If applicable, returns the file name of this compound document.
+            </summary>
+        </member>
+        <member name="T:LiteCDF.CompoundDocument.DirectoryEntry">
+            <summary>
+            Represents a directory entry in a compound document.
+            </summary>
+        </member>
+        <member name="P:LiteCDF.CompoundDocument.DirectoryEntry.Id">
+            <summary>
+            Original ID of the directory entry, based on its position within the directory stream.
+            </summary>
+        </member>
+        <member name="P:LiteCDF.CompoundDocument.DirectoryEntry.Name">
+            <summary>
+            Name of the directory entry.
+            </summary>
+        </member>
+        <member name="P:LiteCDF.CompoundDocument.DirectoryEntry.Type">
+            <summary>
+            Type of the directory entry.
+            <para>This could be a <see langword="stream"/> (file), a <see langword="storage"/> (directory) or the <see langword="root storage"/> (internal).</para>
+            </summary>
+        </member>
+        <member name="P:LiteCDF.CompoundDocument.DirectoryEntry.IsRootStorageDescendant">
+            <summary>
+            Indicates whether this directory entry is a direct descendant of the root storage.
+            </summary>
+        </member>
+        <member name="P:LiteCDF.CompoundDocument.DirectoryEntry.Stream">
+            <summary>
+            If the directory entry represents a <see langword="stream"/>, this property contains its data as a raw byte array.
+            </summary>
+        </member>
+        <member name="T:LiteCDF.CompoundDocument.DirectoryEntry.EntryType">
+            <summary>
+            Type of the directory entry.
+            <para>This could be a <see langword="stream"/> (file), a <see langword="storage"/> (directory) or the <see langword="root storage"/> (internal).</para>
+            </summary>
+        </member>
+        <member name="F:LiteCDF.CompoundDocument.DirectoryEntry.EntryType.Empty">
+            <summary>
+            Indicates an unknown or unassigned entry type.
+            </summary>
+        </member>
+        <member name="F:LiteCDF.CompoundDocument.DirectoryEntry.EntryType.Storage">
+            <summary>
+            Indicates a storage (directory).
+            </summary>
+        </member>
+        <member name="F:LiteCDF.CompoundDocument.DirectoryEntry.EntryType.Stream">
+            <summary>
+            Indicates a stream (file).
+            </summary>
+        </member>
+        <member name="F:LiteCDF.CompoundDocument.DirectoryEntry.EntryType.RootStorage">
+            <summary>
+            Indicates the root storage (internal).
+            </summary>
+        </member>
+        <member name="M:LiteCDF.CompoundDocument.DirectoryEntry.ToString">
+            <summary>
+            Returns the name of the directory entry.
+            </summary>
+            <returns></returns>
+        </member>
+    </members>
+</doc>

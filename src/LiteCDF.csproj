@@ -7,6 +7,10 @@
     <Copyright>Copyright © 2026</Copyright>
     <PackageProjectUrl>https://github.com/silkfire/LiteCDF</PackageProjectUrl>
     <Description>A high performance compound document format (CDF) reader.</Description>
+    <DocumentationFile>./LiteCDF.xml</DocumentationFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageIcon>icon.png</PackageIcon>
     <Version>5.1.1</Version>
     <AssemblyVersion>5.1.1.0</AssemblyVersion>
     <PackageReleaseNotes>5.1.1 Performance improvements</PackageReleaseNotes>
@@ -15,6 +19,24 @@
   <ItemGroup>
     <PackageReference Include="BinaryBuffers" Version="4.1.0" />
     <PackageReference Include="StreamExtensions" Version="4.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+      <Visible>False</Visible>
+    </None>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+      <Visible>False</Visible>
+    </None>
+    <None Include="..\icon.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+      <Visible>False</Visible>
+    </None>
   </ItemGroup>
 
 </Project>
