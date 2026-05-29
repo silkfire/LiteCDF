@@ -283,7 +283,7 @@ public class CompoundDocument
             }
         }
 
-            
+
         if (firstPartMsatSatSectorCount < satSectorCount)
         {
             var satSectorIndex = (int)HEADER_MSAT_SAT_SECID_COUNT;
@@ -504,7 +504,7 @@ public class CompoundDocument
                         throw new CdfException(Errors.ShortStreamContainerStreamSizeIsZero);
                     }
                 }
-                
+
                 var isShortStream = false;
                 if (i > 0 && streamSize > 0 && streamSize < _standardStreamSizeThreshold)
                 {
@@ -516,11 +516,11 @@ public class CompoundDocument
                     isShortStream = true;
                 }
 
-                var entry = new DirectoryEntry(this, DirectoryEntries.Count, entryName, entryType, firstStreamSecId, streamSize, isShortStream) 
-                { 
-                    LeftChildDirId = leftChildDirId, 
-                    RightChildDirId = rightChildDirId, 
-                    RootNodeEntryDirId = rootNodeEntryDirId 
+                var entry = new DirectoryEntry(this, DirectoryEntries.Count, entryName, entryType, firstStreamSecId, streamSize, isShortStream)
+                {
+                    LeftChildDirId = leftChildDirId,
+                    RightChildDirId = rightChildDirId,
+                    RootNodeEntryDirId = rootNodeEntryDirId
                 };
 
                 if (entryName != null && streamNameMatch != null && streamNameMatch(entryName))
