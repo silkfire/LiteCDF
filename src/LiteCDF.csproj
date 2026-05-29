@@ -17,7 +17,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BinaryBuffers" Version="4.1.0" />
+    <PackageReference Include="BinaryBuffers" Version="5.0.0" />
     <PackageReference Include="StreamExtensions" Version="4.0.0" />
   </ItemGroup>
 
