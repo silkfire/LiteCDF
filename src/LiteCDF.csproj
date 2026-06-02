@@ -13,12 +13,16 @@
     <PackageIcon>icon.png</PackageIcon>
     <Version>5.2.0</Version>
     <AssemblyVersion>5.2.0.0</AssemblyVersion>
-    <PackageReleaseNotes>5.2.0 Further performance improvements</PackageReleaseNotes>
+    <PackageReleaseNotes>5.2.0 Further performance improvements and bug fixes</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="BinaryBuffers" Version="5.1.0" />
     <PackageReference Include="StreamExtensions" Version="4.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="LiteCDF.Tests" />
   </ItemGroup>
 
   <ItemGroup>

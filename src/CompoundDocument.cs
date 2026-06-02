@@ -53,6 +53,11 @@ public class CompoundDocument
 
     private List<DirectoryEntry> _directoryEntries;
 
+    // The root storage entry holds the short-stream container. It is kept separately because
+    // VisitEntries() may later replace _directoryEntries with a filtered list that excludes the root,
+    // and short-stream reads must still be able to locate the container.
+    private DirectoryEntry _rootStorageEntry;
+
     /// <summary>
     /// The directory entries contained in this compound document.
     /// </summary>
@@ -135,7 +140,7 @@ public class CompoundDocument
 
                 if (streamNameMatch != null)
                 {
-                    if (returnOnFirstMatch.HasValue && returnOnFirstMatch.Value)
+                    if (returnOnFirstMatch == true)
                     {
                         var matchedDirectoryEntry = _directoryEntries.FirstOrDefault(de => streamNameMatch(de.Name));
 
@@ -150,7 +155,7 @@ public class CompoundDocument
 
             return ReadDirectoryEntries(mainReader, streamNameMatch, returnOnFirstMatch, directorySecIdChain);
         }
-        catch (EndOfStreamException e)
+        catch (Exception e) when (e is EndOfStreamException or ArgumentOutOfRangeException)
         {
             throw new CdfException(Errors.UnexpectedEndOfStream, e);
         }
@@ -325,10 +330,6 @@ public class CompoundDocument
         {
             throw new CdfException(Errors.UnexpectedEndOfStream);
         }
-        catch (IndexOutOfRangeException)
-        {
-            throw new CdfException(Errors.InvalidSecIdReference);
-        }
 
         if (satSecIdChain.Length == 0)
         {
@@ -390,7 +391,7 @@ public class CompoundDocument
         {
             if (isShortStream)
             {
-                var rootStorageStream = _directoryEntries[0].Stream ?? throw new CdfException(Errors.NoShortStreamContainerStreamDefined);
+                var rootStorageStream = _rootStorageEntry.Stream;
                 var reader = new BinaryBufferReader(rootStorageStream);
                 
                 return ReadEntryStream(reader, size, startSector, _shortSectorSize, 0, _ssatSecIdChain);
@@ -484,11 +485,16 @@ public class CompoundDocument
                     RootNodeEntryDirId = rootNodeEntryDirId
                 };
 
+                if (i == 0)
+                {
+                    _rootStorageEntry = entry;
+                }
+
                 if (entryName != null && streamNameMatch != null && streamNameMatch(entryName))
                 {
                     matchedDirectoryEntries[entryName] = entry.Stream;
 
-                    if (returnOnFirstMatch.HasValue && returnOnFirstMatch.Value)
+                    if (returnOnFirstMatch == true)
                     {
                         break;
                     }
@@ -674,6 +680,6 @@ public class CompoundDocument
         /// Returns the name of the directory entry.
         /// </summary>
         /// <returns></returns>
-        public override string ToString() => $"{Name ?? "<empty>"} {(Type == EntryType.Storage ? "<STORAGE>" : $"| {(_streamSize > 0 ? $"{_streamSize} byte{(_streamSize != 0 ? "s" : "")}" : "<empty>")}")}";
+        public override string ToString() => $"{Name ?? "<empty>"} {(Type == EntryType.Storage ? "<STORAGE>" : $"| {(_streamSize > 0 ? $"{_streamSize} byte{(_streamSize != 1 ? "s" : "")}" : "<empty>")}")}";
     }
 }

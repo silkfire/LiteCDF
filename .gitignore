@@ -5,3 +5,6 @@ _ReSharper.*
 bin
 obj
 packages
+
+[Tt]est[Rr]esult*/
+coveragereport/
