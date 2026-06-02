@@ -262,26 +262,7 @@ public class CompoundDocument
 #endif
         var firstPartMsatSatSectorCount = Math.Min(satSectorCount, HEADER_MSAT_SAT_SECID_COUNT);
 
-
-        var remainder = firstPartMsatSatSectorCount % 4;
-
-        for (var i = 0; i < remainder; i++)
-        {
-            sat[i] = reader.ReadInt32();
-        }
-
-        if (firstPartMsatSatSectorCount >= 4)
-        {
-            var remainingSecIdCount = firstPartMsatSatSectorCount - remainder;
-
-            for (var i = 0; i < remainingSecIdCount; i += 4)
-            {
-                sat[remainder + i]     = reader.ReadInt32();
-                sat[remainder + i + 1] = reader.ReadInt32();
-                sat[remainder + i + 2] = reader.ReadInt32();
-                sat[remainder + i + 3] = reader.ReadInt32();
-            }
-        }
+        reader.ReadInto(sat.AsSpan(0, firstPartMsatSatSectorCount));
 
 
         if (firstPartMsatSatSectorCount < satSectorCount)
@@ -300,30 +281,9 @@ public class CompoundDocument
 
                 var remainingSecIdsInCurrentSector = Math.Min(remainingMsatSatSectorCount, secIdsPerSector - 1);
 
-
-                remainder = remainingSecIdsInCurrentSector % 4;
-
-                for (var j = 0; j < remainder; j++)
-                {
-                    sat[satSectorIndex++] = reader.ReadInt32();
-                    remainingMsatSatSectorCount--;
-                }
-
-                if (remainingSecIdsInCurrentSector >= 4)
-                {
-                    var remainingSecIdCount = remainingSecIdsInCurrentSector - remainder;
-
-                    for (var j = 0; j < remainingSecIdCount; j += 4)
-                    {
-                        sat[satSectorIndex]     = reader.ReadInt32();
-                        sat[satSectorIndex + 1] = reader.ReadInt32();
-                        sat[satSectorIndex + 2] = reader.ReadInt32();
-                        sat[satSectorIndex + 3] = reader.ReadInt32();
-
-                        remainingMsatSatSectorCount -= 4;
-                        satSectorIndex += 4;
-                    }
-                }
+                reader.ReadInto(sat.AsSpan(satSectorIndex, remainingSecIdsInCurrentSector));
+                satSectorIndex += remainingSecIdsInCurrentSector;
+                remainingMsatSatSectorCount -= remainingSecIdsInCurrentSector;
 
                 if (remainingMsatSatSectorCount > 0)
                 {
@@ -355,10 +315,7 @@ public class CompoundDocument
             {
                 reader.Position = HEADER_SIZE + sat[i] * sectorSize;
 
-                for (var j = 0; j < secIdsPerSector; j++)
-                {
-                    satSecIdChain[i * secIdsPerSector + j] = reader.ReadInt32();
-                }
+                reader.ReadInto(satSecIdChain.AsSpan(i * secIdsPerSector, secIdsPerSector));
             }
         }
         catch (ArgumentOutOfRangeException)
@@ -405,10 +362,7 @@ public class CompoundDocument
 #endif
                     reader.Position = HEADER_SIZE + currentSecIdSsat * sectorSize;
 
-                    for (var j = 0; j < secIdsPerSector; j++)
-                    {
-                        ssatSecIdChain[i * secIdsPerSector + j] = reader.ReadInt32();
-                    }
+                    reader.ReadInto(ssatSecIdChain.AsSpan(i * secIdsPerSector, secIdsPerSector));
 
                     currentSecIdSsat = satSecIdChain[currentSecIdSsat];
                 }
@@ -452,13 +406,21 @@ public class CompoundDocument
 
             var entriesPerSector = _sectorSize / DIRECTORY_ENTRY_SIZE;
 
+            var currentSectorIndex = -1;
+            var sectorBasePosition = 0;
+
             for (var i = 0; i < DirectoryEntries.Capacity; i++)
             {
                 var sectorIndex = i / entriesPerSector;
-                var entryOffsetInSector = i % entriesPerSector * DIRECTORY_ENTRY_SIZE;
-                var sectorId = directorySecIdChain[sectorIndex];
+                if (sectorIndex != currentSectorIndex)
+                {
+                    currentSectorIndex = sectorIndex;
+                    sectorBasePosition = HEADER_SIZE + directorySecIdChain[sectorIndex] * _sectorSize;
+                }
 
-                reader.Position = HEADER_SIZE + sectorId * _sectorSize + entryOffsetInSector;
+                var entryOffsetInSector = i % entriesPerSector * DIRECTORY_ENTRY_SIZE;
+
+                reader.Position = sectorBasePosition + entryOffsetInSector;
 
                 var entryNameSequence = reader.ReadSpan(64);
 
@@ -538,7 +500,9 @@ public class CompoundDocument
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static List<int> GetDirectoryStreamSecIdChain(int firstSecIdDirectoryStream, int[] satSecIdChain)
     {
-        var directorySecIdChain = new List<int>();
+        // The directory stream of typical documents spans only a handful of sectors; seeding a modest
+        // capacity covers that common case in a single allocation and avoids the List's early growth churn.
+        var directorySecIdChain = new List<int>(16);
 
         var currentSecIdDirectoryStream = firstSecIdDirectoryStream;
         var fast = currentSecIdDirectoryStream;
@@ -579,7 +543,7 @@ public class CompoundDocument
     private static byte[] ReadEntryStream(BinaryBufferReader reader, int streamSize, int firstStreamSecId, int sectorSize, ushort initialOffset, int[] secIdChain)
     {
         var entryStream = new byte[streamSize];
-        var entryStreamWriter = new BinaryBufferWriter(entryStream);
+        var destination = entryStream.AsSpan();
 
         var currentStreamSecId = firstStreamSecId;
         var streamSectorCount = (int)Math.Ceiling((double)streamSize / sectorSize);
@@ -596,7 +560,8 @@ public class CompoundDocument
 
             var bytesToRead = Math.Min(remainingBytesToRead, sectorSize);
 
-            entryStreamWriter.Write(reader.ReadSpan(bytesToRead));
+            reader.ReadSpan(bytesToRead).CopyTo(destination);
+            destination = destination[bytesToRead..];
 
             remainingBytesToRead -= bytesToRead;
 

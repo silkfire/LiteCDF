@@ -11,13 +11,13 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageIcon>icon.png</PackageIcon>
-    <Version>5.1.1</Version>
-    <AssemblyVersion>5.1.1.0</AssemblyVersion>
-    <PackageReleaseNotes>5.1.1 Performance improvements</PackageReleaseNotes>
+    <Version>5.2.0</Version>
+    <AssemblyVersion>5.2.0.0</AssemblyVersion>
+    <PackageReleaseNotes>5.2.0 Further performance improvements</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BinaryBuffers" Version="5.0.0" />
+    <PackageReference Include="BinaryBuffers" Version="5.1.0" />
     <PackageReference Include="StreamExtensions" Version="4.0.0" />
   </ItemGroup>
 
