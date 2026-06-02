@@ -5,6 +5,7 @@ using StreamExtensions;
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -50,10 +51,12 @@ public class CompoundDocument
     private int _shortSectorSize;
     private uint _standardStreamSizeThreshold;
 
+    private List<DirectoryEntry> _directoryEntries;
+
     /// <summary>
     /// The directory entries contained in this compound document.
     /// </summary>
-    public List<DirectoryEntry> DirectoryEntries { get; private set; }
+    public ReadOnlyCollection<DirectoryEntry> DirectoryEntries => _directoryEntries.AsReadOnly();
 
     internal CompoundDocument() { }
 
@@ -122,7 +125,7 @@ public class CompoundDocument
 
             var directorySecIdChain = GetDirectoryStreamSecIdChain(firstSecIdDirectoryStream, _satSecIdChain);
 
-            DirectoryEntries = new List<DirectoryEntry>(directorySecIdChain.Count * (_sectorSize / DIRECTORY_ENTRY_SIZE));
+            _directoryEntries = new List<DirectoryEntry>(directorySecIdChain.Count * (_sectorSize / DIRECTORY_ENTRY_SIZE));
 
             if (rootStorageDescendantsOnly)
             {
@@ -134,12 +137,12 @@ public class CompoundDocument
                 {
                     if (returnOnFirstMatch.HasValue && returnOnFirstMatch.Value)
                     {
-                        var matchedDirectoryEntry = DirectoryEntries.FirstOrDefault(de => streamNameMatch(de.Name));
+                        var matchedDirectoryEntry = _directoryEntries.FirstOrDefault(de => streamNameMatch(de.Name));
 
                         return matchedDirectoryEntry != null ? new Dictionary<string, byte[]> { [matchedDirectoryEntry.Name] = matchedDirectoryEntry.Stream } : [];
                     }
 
-                    return DirectoryEntries.Where(de => streamNameMatch(de.Name)).ToDictionary(de => de.Name, de => de.Stream);
+                    return _directoryEntries.Where(de => streamNameMatch(de.Name)).ToDictionary(de => de.Name, de => de.Stream);
                 }
 
                 return null;
@@ -156,13 +159,13 @@ public class CompoundDocument
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void VisitEntries()
     {
-        if (DirectoryEntries[0].RootNodeEntryDirId > 0)
+        if (_directoryEntries[0].RootNodeEntryDirId > 0)
         {
             var visitId = 0;
 
-            VisitEntries(DirectoryEntries[0].RootNodeEntryDirId, ref visitId);
+            VisitEntries(_directoryEntries[0].RootNodeEntryDirId, ref visitId);
 
-            DirectoryEntries = DirectoryEntries.Where(de => de.IsRootStorageDescendant)
+            _directoryEntries = _directoryEntries.Where(de => de.IsRootStorageDescendant)
                                                .OrderBy(de => de.VisitId)
                                                .ToList();
         }
@@ -172,27 +175,27 @@ public class CompoundDocument
     {
         while (true)
         {
-            if (directoryEntryId >= DirectoryEntries.Count)
+            if (directoryEntryId >= _directoryEntries.Count)
             {
                 throw new CdfException(string.Format(Errors.ReferredChildDirectoryEntryMissing, directoryEntryId));
             }
 
-            if (DirectoryEntries[directoryEntryId].VisitId.HasValue)
+            if (_directoryEntries[directoryEntryId].VisitId.HasValue)
             {
                 throw new CdfException(Errors.CyclicChildDirectoryEntryReference);
             }
 
-            DirectoryEntries[directoryEntryId].IsRootStorageDescendant = true;
-            DirectoryEntries[directoryEntryId].VisitId = ++visitId;
+            _directoryEntries[directoryEntryId].IsRootStorageDescendant = true;
+            _directoryEntries[directoryEntryId].VisitId = ++visitId;
 
-            if (DirectoryEntries[directoryEntryId].RightChildDirId > 0)
+            if (_directoryEntries[directoryEntryId].RightChildDirId > 0)
             {
-                VisitEntries(DirectoryEntries[directoryEntryId].RightChildDirId, ref visitId);
+                VisitEntries(_directoryEntries[directoryEntryId].RightChildDirId, ref visitId);
             }
 
-            if (DirectoryEntries[directoryEntryId].LeftChildDirId > 0)
+            if (_directoryEntries[directoryEntryId].LeftChildDirId > 0)
             {
-                directoryEntryId = DirectoryEntries[directoryEntryId].LeftChildDirId;
+                directoryEntryId = _directoryEntries[directoryEntryId].LeftChildDirId;
 
                 continue;
             }
@@ -387,7 +390,7 @@ public class CompoundDocument
         {
             if (isShortStream)
             {
-                var rootStorageStream = DirectoryEntries[0].Stream ?? throw new CdfException(Errors.NoShortStreamContainerStreamDefined);
+                var rootStorageStream = _directoryEntries[0].Stream ?? throw new CdfException(Errors.NoShortStreamContainerStreamDefined);
                 var reader = new BinaryBufferReader(rootStorageStream);
                 
                 return ReadEntryStream(reader, size, startSector, _shortSectorSize, 0, _ssatSecIdChain);
@@ -402,14 +405,14 @@ public class CompoundDocument
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private Dictionary<string, byte[]> ReadDirectoryEntries(BinaryBufferReader reader, Predicate<string> streamNameMatch, bool? returnOnFirstMatch, List<int> directorySecIdChain)
         {
-            var matchedDirectoryEntries = new Dictionary<string, byte[]>(DirectoryEntries.Capacity);
+            var matchedDirectoryEntries = new Dictionary<string, byte[]>(_directoryEntries.Capacity);
 
             var entriesPerSector = _sectorSize / DIRECTORY_ENTRY_SIZE;
 
             var currentSectorIndex = -1;
             var sectorBasePosition = 0;
 
-            for (var i = 0; i < DirectoryEntries.Capacity; i++)
+            for (var i = 0; i < _directoryEntries.Capacity; i++)
             {
                 var sectorIndex = i / entriesPerSector;
                 if (sectorIndex != currentSectorIndex)
@@ -474,7 +477,7 @@ public class CompoundDocument
                     isShortStream = true;
                 }
 
-                var entry = new DirectoryEntry(this, DirectoryEntries.Count, entryName, entryType, firstStreamSecId, streamSize, isShortStream)
+                var entry = new DirectoryEntry(this, _directoryEntries.Count, entryName, entryType, firstStreamSecId, streamSize, isShortStream)
                 {
                     LeftChildDirId = leftChildDirId,
                     RightChildDirId = rightChildDirId,
@@ -491,7 +494,7 @@ public class CompoundDocument
                     }
                 }
 
-                DirectoryEntries.Add(entry);
+                _directoryEntries.Add(entry);
             }
 
             return streamNameMatch == null ? null : matchedDirectoryEntries;
