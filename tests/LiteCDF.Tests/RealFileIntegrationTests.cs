@@ -25,7 +25,7 @@ public class RealFileIntegrationTests
         if (!string.IsNullOrWhiteSpace(dir) && Directory.Exists(dir))
         {
             foreach (var file in Directory.EnumerateFiles(dir, "*.*", SearchOption.AllDirectories)
-                                          .Where(f => f.EndsWith(".xls", StringComparison.OrdinalIgnoreCase) ||
+                                          .Where(static f => f.EndsWith(".xls", StringComparison.OrdinalIgnoreCase) ||
                                                       f.EndsWith(".doc", StringComparison.OrdinalIgnoreCase)))
             {
                 data.Add(file);
@@ -57,7 +57,7 @@ public class RealFileIntegrationTests
         Assert.Equal(CompoundDocument.DirectoryEntry.EntryType.RootStorage, document.DirectoryEntries[0].Type);
 
         // Every stream's bytes must be materializable, and standard-stream sizes must match the declared length.
-        foreach (var entry in document.DirectoryEntries.Where(e => e.Type == CompoundDocument.DirectoryEntry.EntryType.Stream))
+        foreach (var entry in document.DirectoryEntries.Where(static e => e.Type == CompoundDocument.DirectoryEntry.EntryType.Stream))
         {
             var stream = entry.Stream;
 
@@ -99,6 +99,6 @@ public class RealFileIntegrationTests
 
         Assert.Equal(fromFile.DirectoryEntries.Count, fromBytes.DirectoryEntries.Count);
         Assert.Equal(fromFile.DirectoryEntries.Count, fromStream.DirectoryEntries.Count);
-        Assert.Equal(fromBytes.DirectoryEntries.Select(e => e.Name), fromStream.DirectoryEntries.Select(e => e.Name));
+        Assert.Equal(fromBytes.DirectoryEntries.Select(static e => e.Name), fromStream.DirectoryEntries.Select(static e => e.Name));
     }
 }

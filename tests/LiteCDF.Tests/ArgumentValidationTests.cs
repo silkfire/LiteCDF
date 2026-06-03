@@ -11,21 +11,21 @@ public class ArgumentValidationTests
     [Fact]
     public void Open_null_byte_array_throws_empty_data_stream()
     {
-        var ex = Assert.Throws<CdfException>(() => Cdf.Open((byte[])null!));
+        var ex = Assert.Throws<CdfException>(static () => Cdf.Open((byte[])null!));
         Assert.Equal(Errors.EmptyDataStream, ex.Message);
     }
 
     [Fact]
     public void Open_empty_byte_array_throws_empty_data_stream()
     {
-        var ex = Assert.Throws<CdfException>(() => Cdf.Open([]));
+        var ex = Assert.Throws<CdfException>(static () => Cdf.Open([]));
         Assert.Equal(Errors.EmptyDataStream, ex.Message);
     }
 
     [Fact]
     public void Open_null_stream_throws_empty_data_stream()
     {
-        var ex = Assert.Throws<CdfException>(() => Cdf.Open((Stream)null!));
+        var ex = Assert.Throws<CdfException>(static () => Cdf.Open((Stream)null!));
         Assert.Equal(Errors.EmptyDataStream, ex.Message);
     }
 
@@ -49,7 +49,7 @@ public class ArgumentValidationTests
     [Fact]
     public void OpenAndReadStream_empty_byte_array_throws_empty_data_stream()
     {
-        var ex = Assert.Throws<CdfException>(() => Cdf.OpenAndReadStream([], n => true));
+        var ex = Assert.Throws<CdfException>(static () => Cdf.OpenAndReadStream([], static n => true));
         Assert.Equal(Errors.EmptyDataStream, ex.Message);
     }
 
@@ -73,21 +73,21 @@ public class ArgumentValidationTests
     [Fact]
     public void OpenAndReadStream_null_byte_array_throws_empty_data_stream()
     {
-        var ex = Assert.Throws<CdfException>(() => Cdf.OpenAndReadStream((byte[])null!, n => true));
+        var ex = Assert.Throws<CdfException>(static () => Cdf.OpenAndReadStream((byte[])null!, static n => true));
         Assert.Equal(Errors.EmptyDataStream, ex.Message);
     }
 
     [Fact]
     public void OpenAndReadStream_filepath_null_predicate_throws()
     {
-        var ex = Assert.Throws<CdfException>(() => Cdf.OpenAndReadStream("anything.cfb", null!));
+        var ex = Assert.Throws<CdfException>(static () => Cdf.OpenAndReadStream("anything.cfb", null!));
         Assert.Equal(Errors.StreamNamePredicateNull, ex.Message);
     }
 
     [Fact]
     public void OpenAndReadStream_null_stream_throws_empty_data_stream()
     {
-        var ex = Assert.Throws<CdfException>(() => Cdf.OpenAndReadStream((Stream)null!, n => true));
+        var ex = Assert.Throws<CdfException>(static () => Cdf.OpenAndReadStream((Stream)null!, static n => true));
         Assert.Equal(Errors.EmptyDataStream, ex.Message);
     }
 
@@ -120,21 +120,21 @@ public class ArgumentValidationTests
     [Fact]
     public void OpenAndReadMultipleStreams_null_byte_array_throws_empty_data_stream()
     {
-        var ex = Assert.Throws<CdfException>(() => Cdf.OpenAndReadMultipleStreams((byte[])null!, n => true));
+        var ex = Assert.Throws<CdfException>(static () => Cdf.OpenAndReadMultipleStreams((byte[])null!, static n => true));
         Assert.Equal(Errors.EmptyDataStream, ex.Message);
     }
 
     [Fact]
     public void OpenAndReadMultipleStreams_filepath_null_predicate_throws()
     {
-        var ex = Assert.Throws<CdfException>(() => Cdf.OpenAndReadMultipleStreams("anything.cfb", null!));
+        var ex = Assert.Throws<CdfException>(static () => Cdf.OpenAndReadMultipleStreams("anything.cfb", null!));
         Assert.Equal(Errors.StreamNamePredicateNull, ex.Message);
     }
 
     [Fact]
     public void OpenAndReadMultipleStreams_null_stream_throws_empty_data_stream()
     {
-        var ex = Assert.Throws<CdfException>(() => Cdf.OpenAndReadMultipleStreams((Stream)null!, n => true));
+        var ex = Assert.Throws<CdfException>(static () => Cdf.OpenAndReadMultipleStreams((Stream)null!, static n => true));
         Assert.Equal(Errors.EmptyDataStream, ex.Message);
     }
 

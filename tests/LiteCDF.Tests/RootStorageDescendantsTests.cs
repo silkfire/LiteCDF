@@ -22,9 +22,9 @@ public class RootStorageDescendantsTests
 
         var document = Cdf.Open(bytes, rootStorageDescendantsOnly: true);
 
-        Assert.Equal(["First", "Second"], document.DirectoryEntries.Select(e => e.Name));
-        Assert.All(document.DirectoryEntries, e => Assert.True(e.IsRootStorageDescendant));
-        Assert.DoesNotContain(document.DirectoryEntries, e => e.Name == "Root Entry");
+        Assert.Equal(["First", "Second"], document.DirectoryEntries.Select(static e => e.Name));
+        Assert.All(document.DirectoryEntries, static e => Assert.True(e.IsRootStorageDescendant));
+        Assert.DoesNotContain(document.DirectoryEntries, static e => e.Name == "Root Entry");
     }
 
     [Fact]
@@ -39,7 +39,7 @@ public class RootStorageDescendantsTests
 
         var document = Cdf.Open(bytes, rootStorageDescendantsOnly: true);
 
-        Assert.Equal(["M1", "M2", "M3", "M4"], document.DirectoryEntries.Select(e => e.Name));
+        Assert.Equal(["M1", "M2", "M3", "M4"], document.DirectoryEntries.Select(static e => e.Name));
     }
 
     [Fact]
@@ -52,8 +52,8 @@ public class RootStorageDescendantsTests
 
         var document = Cdf.Open(bytes, rootStorageDescendantsOnly: true);
 
-        Assert.Equal(5000, document.DirectoryEntries.Single(e => e.Name == "Big").Stream!.Length);
-        Assert.Equal(4, document.DirectoryEntries.Single(e => e.Name == "Tiny").Stream!.Length);
+        Assert.Equal(5000, document.DirectoryEntries.Single(static e => e.Name == "Big").Stream!.Length);
+        Assert.Equal(4, document.DirectoryEntries.Single(static e => e.Name == "Tiny").Stream!.Length);
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public class RootStorageDescendantsTests
 
         var document = Cdf.Open(bytes, rootStorageDescendantsOnly: true);
 
-        Assert.Contains(document.DirectoryEntries, e => e.Name == "Storage" && e.Type == CompoundDocument.DirectoryEntry.EntryType.Storage);
+        Assert.Contains(document.DirectoryEntries, static e => e.Name == "Storage" && e.Type == CompoundDocument.DirectoryEntry.EntryType.Storage);
     }
 
     [Fact]
@@ -82,8 +82,8 @@ public class RootStorageDescendantsTests
 
         var document = Cdf.Open(bytes, rootStorageDescendantsOnly: true);
 
-        Assert.Equal(["A", "B"], document.DirectoryEntries.Select(e => e.Name));
-        Assert.All(document.DirectoryEntries, e => Assert.True(e.IsRootStorageDescendant));
+        Assert.Equal(["A", "B"], document.DirectoryEntries.Select(static e => e.Name));
+        Assert.All(document.DirectoryEntries, static e => Assert.True(e.IsRootStorageDescendant));
     }
 
     [Fact]
@@ -94,7 +94,7 @@ public class RootStorageDescendantsTests
                     .AddStream("Target", "payload")
                     .Build();
 
-        var result = Cdf.OpenAndReadStream(bytes, n => n == "Target", rootStorageDescendantOnly: true);
+        var result = Cdf.OpenAndReadStream(bytes, static n => n == "Target", rootStorageDescendantOnly: true);
 
         Assert.Equal("payload", System.Text.Encoding.UTF8.GetString(result!));
     }
@@ -104,7 +104,7 @@ public class RootStorageDescendantsTests
     {
         var bytes = new CdfBuilder().AddStream("A", "a").AddStream("B", "b").Build();
 
-        var result = Cdf.OpenAndReadStream(bytes, n => n == "Missing", rootStorageDescendantOnly: true);
+        var result = Cdf.OpenAndReadStream(bytes, static n => n == "Missing", rootStorageDescendantOnly: true);
 
         Assert.Null(result);
     }
@@ -118,7 +118,7 @@ public class RootStorageDescendantsTests
                     .AddStream("Doc_2", "two")
                     .Build();
 
-        var result = Cdf.OpenAndReadMultipleStreams(bytes, n => n != null && n.StartsWith("Doc_"), rootStorageDescendantsOnly: true);
+        var result = Cdf.OpenAndReadMultipleStreams(bytes, static n => n != null && n.StartsWith("Doc_"), rootStorageDescendantsOnly: true);
 
         Assert.Equal(2, result.Count);
         Assert.Equal("one", System.Text.Encoding.UTF8.GetString(result["Doc_1"]));

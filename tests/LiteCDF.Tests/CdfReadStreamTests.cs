@@ -16,7 +16,7 @@ public class CdfReadStreamTests
         var payload = Encoding.UTF8.GetBytes(new string('m', 5_000));
         var bytes = new CdfBuilder().AddStream("Other", "x").AddStream("Target", payload).Build();
 
-        var result = Cdf.OpenAndReadStream(bytes, n => n == "Target");
+        var result = Cdf.OpenAndReadStream(bytes, static n => n == "Target");
 
         Assert.Equal(payload, result);
     }
@@ -26,7 +26,7 @@ public class CdfReadStreamTests
     {
         var bytes = new CdfBuilder().AddStream("A", "a").AddStream("B", "b").Build();
 
-        var result = Cdf.OpenAndReadStream(bytes, n => n == "DoesNotExist");
+        var result = Cdf.OpenAndReadStream(bytes, static n => n == "DoesNotExist");
 
         Assert.Null(result);
     }
@@ -39,7 +39,7 @@ public class CdfReadStreamTests
                     .AddStream("Stream2", "second")
                     .Build();
 
-        var result = Cdf.OpenAndReadStream(bytes, n => n != null && n.StartsWith("Stream"));
+        var result = Cdf.OpenAndReadStream(bytes, static n => n != null && n.StartsWith("Stream"));
 
         Assert.Equal("first", Encoding.UTF8.GetString(result!));
     }
@@ -74,9 +74,9 @@ public class CdfReadStreamTests
 
         try
         {
-            Assert.Equal(payload, Cdf.OpenAndReadStream(bytes, n => n == "P"));
-            Assert.Equal(payload, Cdf.OpenAndReadStream(ms, n => n == "P"));
-            Assert.Equal(payload, Cdf.OpenAndReadStream(path, n => n == "P"));
+            Assert.Equal(payload, Cdf.OpenAndReadStream(bytes, static n => n == "P"));
+            Assert.Equal(payload, Cdf.OpenAndReadStream(ms, static n => n == "P"));
+            Assert.Equal(payload, Cdf.OpenAndReadStream(path, static n => n == "P"));
         }
         finally
         {
@@ -93,7 +93,7 @@ public class CdfReadStreamTests
                     .AddStream("Doc_2", "two")
                     .Build();
 
-        var result = Cdf.OpenAndReadMultipleStreams(bytes, n => n != null && n.StartsWith("Doc_"));
+        var result = Cdf.OpenAndReadMultipleStreams(bytes, static n => n != null && n.StartsWith("Doc_"));
 
         Assert.Equal(2, result.Count);
         Assert.Equal("one", Encoding.UTF8.GetString(result["Doc_1"]));
@@ -106,7 +106,7 @@ public class CdfReadStreamTests
     {
         var bytes = new CdfBuilder().AddStream("A", "a").Build();
 
-        var result = Cdf.OpenAndReadMultipleStreams(bytes, n => n == "Missing");
+        var result = Cdf.OpenAndReadMultipleStreams(bytes, static n => n == "Missing");
 
         Assert.Empty(result);
     }
@@ -118,10 +118,10 @@ public class CdfReadStreamTests
 
         using var ms = new MemoryStream(bytes);
 
-        var fromArray = Cdf.OpenAndReadMultipleStreams(bytes, n => n != null && n.StartsWith("M"));
-        var fromStream = Cdf.OpenAndReadMultipleStreams(ms, n => n != null && n.StartsWith("M"));
+        var fromArray = Cdf.OpenAndReadMultipleStreams(bytes, static n => n != null && n.StartsWith('M'));
+        var fromStream = Cdf.OpenAndReadMultipleStreams(ms, static n => n != null && n.StartsWith('M'));
 
-        Assert.Equal(fromArray.Keys.OrderBy(k => k), fromStream.Keys.OrderBy(k => k));
+        Assert.Equal(fromArray.Keys.OrderBy(static k => k), fromStream.Keys.OrderBy(static k => k));
     }
 
     [Fact]
@@ -134,10 +134,10 @@ public class CdfReadStreamTests
 
         try
         {
-            var fromArray = Cdf.OpenAndReadMultipleStreams(bytes, n => n != null && n.StartsWith("F"));
-            var fromFile = Cdf.OpenAndReadMultipleStreams(path, n => n != null && n.StartsWith("F"));
+            var fromArray = Cdf.OpenAndReadMultipleStreams(bytes, static n => n != null && n.StartsWith('F'));
+            var fromFile = Cdf.OpenAndReadMultipleStreams(path, static n => n != null && n.StartsWith('F'));
 
-            Assert.Equal(fromArray.Keys.OrderBy(k => k), fromFile.Keys.OrderBy(k => k));
+            Assert.Equal(fromArray.Keys.OrderBy(static k => k), fromFile.Keys.OrderBy(static k => k));
             Assert.Equal("1", Encoding.UTF8.GetString(fromFile["F1"]));
             Assert.Equal("2", Encoding.UTF8.GetString(fromFile["F2"]));
         }

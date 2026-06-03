@@ -81,7 +81,7 @@ public class CompoundDocument
         return this;
     }
 
-    internal ReadOnlyDictionary<string, byte[]>? Mount(string filepath, Predicate<string>? streamNameMatch, bool? returnOnFirstMatch, bool rootStorageDescendantsOnly)
+    internal ReadOnlyDictionary<string, byte[]>? Mount(string filepath, Predicate<string?>? streamNameMatch, bool? returnOnFirstMatch, bool rootStorageDescendantsOnly)
     {
         _filepath = filepath;
 
@@ -95,7 +95,7 @@ public class CompoundDocument
         }
     }
 
-    internal ReadOnlyDictionary<string, byte[]>? Mount(byte[] data, Predicate<string>? streamNameMatch, bool? returnOnFirstMatch, bool rootStorageDescendantsOnly)
+    internal ReadOnlyDictionary<string, byte[]>? Mount(byte[] data, Predicate<string?>? streamNameMatch, bool? returnOnFirstMatch, bool rootStorageDescendantsOnly)
     {
         _data = data;
         var mainReader = new BinaryBufferReader(data);
@@ -142,14 +142,14 @@ public class CompoundDocument
                 {
                     if (returnOnFirstMatch == true)
                     {
-                        var matchedDirectoryEntry = _directoryEntries.FirstOrDefault(de => streamNameMatch(de.Name!));
+                        var matchedDirectoryEntry = _directoryEntries.FirstOrDefault(de => streamNameMatch(de.Name));
 
                         return matchedDirectoryEntry != null
                             ? new Dictionary<string, byte[]> { [matchedDirectoryEntry.Name!] = matchedDirectoryEntry.Stream! }.AsReadOnly()
                             : ReadOnlyDictionary<string, byte[]>.Empty;
                     }
 
-                    return _directoryEntries.Where(de => streamNameMatch(de.Name!)).ToDictionary(de => de.Name!, de => de.Stream!).AsReadOnly();
+                    return _directoryEntries.Where(de => streamNameMatch(de.Name)).ToDictionary(de => de.Name!, de => de.Stream!).AsReadOnly();
                 }
 
                 return null;
@@ -172,8 +172,8 @@ public class CompoundDocument
 
             VisitEntries(_directoryEntries[0].RootNodeEntryDirId, ref visitId);
 
-            _directoryEntries = _directoryEntries.Where(de => de.IsRootStorageDescendant)
-                                                 .OrderBy(de => de.VisitId)
+            _directoryEntries = _directoryEntries.Where(static de => de.IsRootStorageDescendant)
+                                                 .OrderBy(static de => de.VisitId)
                                                  .ToList();
         }
     }
@@ -406,7 +406,7 @@ public class CompoundDocument
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private ReadOnlyDictionary<string, byte[]>? ReadDirectoryEntries(BinaryBufferReader reader, Predicate<string>? streamNameMatch, bool? returnOnFirstMatch, List<int> directorySecIdChain)
+        private ReadOnlyDictionary<string, byte[]>? ReadDirectoryEntries(BinaryBufferReader reader, Predicate<string?>? streamNameMatch, bool? returnOnFirstMatch, List<int> directorySecIdChain)
         {
             var matchedDirectoryEntries = new Dictionary<string, byte[]>(_directoryEntries.Capacity);
 
@@ -440,7 +440,7 @@ public class CompoundDocument
                 var entryType = (DirectoryEntry.EntryType)reader.ReadByte();
                 var entryName = entryNameSize < 2 ? null : Encoding.Unicode.GetString(entryNameSequence[..entryNameSize]);
 
-                if (i > 0 && streamNameMatch != null && !streamNameMatch(entryName!))
+                if (i > 0 && streamNameMatch != null && !streamNameMatch(entryName))
                 {
                     continue;
                 }

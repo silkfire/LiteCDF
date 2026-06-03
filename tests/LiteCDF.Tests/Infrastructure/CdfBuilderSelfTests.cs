@@ -17,7 +17,7 @@ public class CdfBuilderSelfTests
 
         var bytes = new CdfBuilder().AddStream("Workbook", payload).Build();
 
-        var stream = Cdf.OpenAndReadStream(bytes, n => n == "Workbook");
+        var stream = Cdf.OpenAndReadStream(bytes, static n => n == "Workbook");
 
         Assert.Equal(payload, stream);
     }
@@ -29,7 +29,7 @@ public class CdfBuilderSelfTests
 
         var bytes = new CdfBuilder().AddStream("Tiny", payload).Build();
 
-        var stream = Cdf.OpenAndReadStream(bytes, n => n == "Tiny");
+        var stream = Cdf.OpenAndReadStream(bytes, static n => n == "Tiny");
 
         Assert.Equal(payload, stream);
     }
