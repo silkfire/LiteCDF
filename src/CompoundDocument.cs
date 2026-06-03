@@ -81,7 +81,7 @@ public class CompoundDocument
         return this;
     }
 
-    internal Dictionary<string, byte[]> Mount(string filepath, Predicate<string> streamNameMatch, bool? returnOnFirstMatch, bool rootStorageDescendantsOnly)
+    internal ReadOnlyDictionary<string, byte[]> Mount(string filepath, Predicate<string> streamNameMatch, bool? returnOnFirstMatch, bool rootStorageDescendantsOnly)
     {
         _filepath = filepath;
 
@@ -95,7 +95,7 @@ public class CompoundDocument
         }
     }
 
-    internal Dictionary<string, byte[]> Mount(byte[] data, Predicate<string> streamNameMatch, bool? returnOnFirstMatch, bool rootStorageDescendantsOnly)
+    internal ReadOnlyDictionary<string, byte[]> Mount(byte[] data, Predicate<string> streamNameMatch, bool? returnOnFirstMatch, bool rootStorageDescendantsOnly)
     {
         _data = data;
         var mainReader = new BinaryBufferReader(data);
@@ -144,10 +144,12 @@ public class CompoundDocument
                     {
                         var matchedDirectoryEntry = _directoryEntries.FirstOrDefault(de => streamNameMatch(de.Name));
 
-                        return matchedDirectoryEntry != null ? new Dictionary<string, byte[]> { [matchedDirectoryEntry.Name] = matchedDirectoryEntry.Stream } : [];
+                        return matchedDirectoryEntry != null
+                            ? new Dictionary<string, byte[]> { [matchedDirectoryEntry.Name] = matchedDirectoryEntry.Stream }.AsReadOnly()
+                            : ReadOnlyDictionary<string, byte[]>.Empty;
                     }
 
-                    return _directoryEntries.Where(de => streamNameMatch(de.Name)).ToDictionary(de => de.Name, de => de.Stream);
+                    return _directoryEntries.Where(de => streamNameMatch(de.Name)).ToDictionary(de => de.Name, de => de.Stream).AsReadOnly();
                 }
 
                 return null;
@@ -404,7 +406,7 @@ public class CompoundDocument
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private Dictionary<string, byte[]> ReadDirectoryEntries(BinaryBufferReader reader, Predicate<string> streamNameMatch, bool? returnOnFirstMatch, List<int> directorySecIdChain)
+        private ReadOnlyDictionary<string, byte[]> ReadDirectoryEntries(BinaryBufferReader reader, Predicate<string> streamNameMatch, bool? returnOnFirstMatch, List<int> directorySecIdChain)
         {
             var matchedDirectoryEntries = new Dictionary<string, byte[]>(_directoryEntries.Capacity);
 
@@ -503,7 +505,7 @@ public class CompoundDocument
                 _directoryEntries.Add(entry);
             }
 
-            return streamNameMatch == null ? null : matchedDirectoryEntries;
+            return streamNameMatch == null ? null : matchedDirectoryEntries.AsReadOnly();
         }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

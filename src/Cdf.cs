@@ -3,7 +3,7 @@
 using StreamExtensions;
 
 using System;
-using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 
@@ -126,7 +126,7 @@ public static class Cdf
     /// <param name="filepath">Path to the document.</param>
     /// <param name="streamNameMatch">A predicate applied to the name of the stream that must be satisfied to determine which streams to read.</param>
     /// <param name="rootStorageDescendantsOnly">If <see langword="true"/>, will only return entries that are descendants of the root storage.</param>
-    public static Dictionary<string, byte[]> OpenAndReadMultipleStreams(string filepath, Predicate<string> streamNameMatch, bool rootStorageDescendantsOnly = false)
+    public static ReadOnlyDictionary<string, byte[]> OpenAndReadMultipleStreams(string filepath, Predicate<string> streamNameMatch, bool rootStorageDescendantsOnly = false)
     {
         if (streamNameMatch == null)
         {
@@ -143,7 +143,7 @@ public static class Cdf
     /// <param name="data">A byte array to read data from.</param>
     /// <param name="streamNameMatch">A predicate applied to the name of the stream that must be satisfied to determine which streams to read.</param>
     /// <param name="rootStorageDescendantsOnly">If <see langword="true"/>, will only return entries that are descendants of the root storage.</param>
-    public static Dictionary<string, byte[]> OpenAndReadMultipleStreams(byte[] data, Predicate<string> streamNameMatch, bool rootStorageDescendantsOnly = false)
+    public static ReadOnlyDictionary<string, byte[]> OpenAndReadMultipleStreams(byte[] data, Predicate<string> streamNameMatch, bool rootStorageDescendantsOnly = false)
     {
         if (data == null || data.Length == 0)
         {
@@ -165,7 +165,7 @@ public static class Cdf
     /// <param name="stream">A stream to read data from.</param>
     /// <param name="streamNameMatch">A predicate applied to the name of the stream that must be satisfied to determine which streams to read.</param>
     /// <param name="rootStorageDescendantsOnly">If <see langword="true"/>, will only return entries that are descendants of the root storage.</param>
-    public static Dictionary<string, byte[]> OpenAndReadMultipleStreams(Stream stream, Predicate<string> streamNameMatch, bool rootStorageDescendantsOnly = false)
+    public static ReadOnlyDictionary<string, byte[]> OpenAndReadMultipleStreams(Stream stream, Predicate<string> streamNameMatch, bool rootStorageDescendantsOnly = false)
     {
         if (stream == null || stream.Length == 0)
         {
