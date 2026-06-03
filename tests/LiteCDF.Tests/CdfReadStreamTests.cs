@@ -13,7 +13,7 @@ public class CdfReadStreamTests
     [Fact]
     public void OpenAndReadStream_returns_the_matching_stream()
     {
-        var payload = Encoding.UTF8.GetBytes(new string('m', 5000));
+        var payload = Encoding.UTF8.GetBytes(new string('m', 5_000));
         var bytes = new CdfBuilder().AddStream("Other", "x").AddStream("Target", payload).Build();
 
         var result = Cdf.OpenAndReadStream(bytes, n => n == "Target");
@@ -64,7 +64,7 @@ public class CdfReadStreamTests
     [Fact]
     public void OpenAndReadStream_from_stream_and_file_agree_with_byte_array()
     {
-        var payload = Encoding.UTF8.GetBytes(new string('p', 5000));
+        var payload = Encoding.UTF8.GetBytes(new string('p', 5_000));
         var bytes = new CdfBuilder().AddStream("P", payload).Build();
 
         using var ms = new MemoryStream(bytes);
