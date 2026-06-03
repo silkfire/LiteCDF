@@ -52,8 +52,8 @@ public class RootStorageDescendantsTests
 
         var document = Cdf.Open(bytes, rootStorageDescendantsOnly: true);
 
-        Assert.Equal(5000, document.DirectoryEntries.Single(e => e.Name == "Big").Stream.Length);
-        Assert.Equal(4, document.DirectoryEntries.Single(e => e.Name == "Tiny").Stream.Length);
+        Assert.Equal(5000, document.DirectoryEntries.Single(e => e.Name == "Big").Stream!.Length);
+        Assert.Equal(4, document.DirectoryEntries.Single(e => e.Name == "Tiny").Stream!.Length);
     }
 
     [Fact]
@@ -77,8 +77,8 @@ public class RootStorageDescendantsTests
         var builder = new CdfBuilder().AddStream("A", "a").AddStream("B", "b");
         var bytes = builder.Build();
 
-        PatchInt32(bytes, builder.DirectoryEntryOffset(1) + 68, CdfBuilder.SecIdFree); // A's left child -> none
-        PatchInt32(bytes, builder.DirectoryEntryOffset(1) + 72, 2);                    // A's right child -> B (DID 2)
+        PatchInt32(bytes, builder.GetDirectoryEntryOffset(1) + 68, CdfBuilder.SecIdFree); // A's left child -> none
+        PatchInt32(bytes, builder.GetDirectoryEntryOffset(1) + 72, 2);                    // A's right child -> B (DID 2)
 
         var document = Cdf.Open(bytes, rootStorageDescendantsOnly: true);
 
@@ -96,7 +96,7 @@ public class RootStorageDescendantsTests
 
         var result = Cdf.OpenAndReadStream(bytes, n => n == "Target", rootStorageDescendantOnly: true);
 
-        Assert.Equal("payload", System.Text.Encoding.UTF8.GetString(result));
+        Assert.Equal("payload", System.Text.Encoding.UTF8.GetString(result!));
     }
 
     [Fact]

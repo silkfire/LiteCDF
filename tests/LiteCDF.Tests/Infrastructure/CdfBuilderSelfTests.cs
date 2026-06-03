@@ -13,7 +13,7 @@ public class CdfBuilderSelfTests
     [Fact]
     public void A_minimal_document_with_one_standard_stream_round_trips()
     {
-        var payload = Encoding.UTF8.GetBytes(new string('A', 5000)); // >= 4096 -> standard stream
+        var payload = Encoding.UTF8.GetBytes(new string('A', 5_000)); // >= 4096 -> standard stream
 
         var bytes = new CdfBuilder().AddStream("Workbook", payload).Build();
 

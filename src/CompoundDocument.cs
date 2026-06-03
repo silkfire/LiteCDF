@@ -43,20 +43,20 @@ public class CompoundDocument
     private const int              SECID_MSAT                  = -4;                //  0xFFFFFFFC = -4 (two's complement)
 
 
-    private string _filepath;
-    private byte[] _data;
-    private int[] _satSecIdChain;
-    private int[] _ssatSecIdChain;
+    private string? _filepath;
+    private byte[] _data = null!;
+    private int[] _satSecIdChain = null!;
+    private int[]? _ssatSecIdChain;
     private int _sectorSize;
     private int _shortSectorSize;
     private uint _standardStreamSizeThreshold;
 
-    private List<DirectoryEntry> _directoryEntries;
+    private List<DirectoryEntry> _directoryEntries = null!;
 
     // The root storage entry holds the short-stream container. It is kept separately because
     // VisitEntries() may later replace _directoryEntries with a filtered list that excludes the root,
     // and short-stream reads must still be able to locate the container.
-    private DirectoryEntry _rootStorageEntry;
+    private DirectoryEntry _rootStorageEntry = null!;
 
     /// <summary>
     /// The directory entries contained in this compound document.
@@ -81,7 +81,7 @@ public class CompoundDocument
         return this;
     }
 
-    internal ReadOnlyDictionary<string, byte[]> Mount(string filepath, Predicate<string> streamNameMatch, bool? returnOnFirstMatch, bool rootStorageDescendantsOnly)
+    internal ReadOnlyDictionary<string, byte[]>? Mount(string filepath, Predicate<string>? streamNameMatch, bool? returnOnFirstMatch, bool rootStorageDescendantsOnly)
     {
         _filepath = filepath;
 
@@ -95,7 +95,7 @@ public class CompoundDocument
         }
     }
 
-    internal ReadOnlyDictionary<string, byte[]> Mount(byte[] data, Predicate<string> streamNameMatch, bool? returnOnFirstMatch, bool rootStorageDescendantsOnly)
+    internal ReadOnlyDictionary<string, byte[]>? Mount(byte[] data, Predicate<string>? streamNameMatch, bool? returnOnFirstMatch, bool rootStorageDescendantsOnly)
     {
         _data = data;
         var mainReader = new BinaryBufferReader(data);
@@ -142,14 +142,14 @@ public class CompoundDocument
                 {
                     if (returnOnFirstMatch == true)
                     {
-                        var matchedDirectoryEntry = _directoryEntries.FirstOrDefault(de => streamNameMatch(de.Name));
+                        var matchedDirectoryEntry = _directoryEntries.FirstOrDefault(de => streamNameMatch(de.Name!));
 
                         return matchedDirectoryEntry != null
-                            ? new Dictionary<string, byte[]> { [matchedDirectoryEntry.Name] = matchedDirectoryEntry.Stream }.AsReadOnly()
+                            ? new Dictionary<string, byte[]> { [matchedDirectoryEntry.Name!] = matchedDirectoryEntry.Stream! }.AsReadOnly()
                             : ReadOnlyDictionary<string, byte[]>.Empty;
                     }
 
-                    return _directoryEntries.Where(de => streamNameMatch(de.Name)).ToDictionary(de => de.Name, de => de.Stream).AsReadOnly();
+                    return _directoryEntries.Where(de => streamNameMatch(de.Name!)).ToDictionary(de => de.Name!, de => de.Stream!).AsReadOnly();
                 }
 
                 return null;
@@ -173,8 +173,8 @@ public class CompoundDocument
             VisitEntries(_directoryEntries[0].RootNodeEntryDirId, ref visitId);
 
             _directoryEntries = _directoryEntries.Where(de => de.IsRootStorageDescendant)
-                                               .OrderBy(de => de.VisitId)
-                                               .ToList();
+                                                 .OrderBy(de => de.VisitId)
+                                                 .ToList();
         }
     }
 
@@ -342,9 +342,9 @@ public class CompoundDocument
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static int[] BuildSsatSecIdChain(BinaryBufferReader reader, uint ssatSectorCount, int[] satSecIdChain, int firstSecIdSsat, int sectorSize, int secIdsPerSector)
+    private static int[]? BuildSsatSecIdChain(BinaryBufferReader reader, uint ssatSectorCount, int[] satSecIdChain, int firstSecIdSsat, int sectorSize, int secIdsPerSector)
     {
-        int[] ssatSecIdChain = null;
+        int[]? ssatSecIdChain = null;
 
 #if DEBUG
         int[] ssat;
@@ -393,10 +393,10 @@ public class CompoundDocument
         {
             if (isShortStream)
             {
-                var rootStorageStream = _rootStorageEntry.Stream;
+                var rootStorageStream = _rootStorageEntry.Stream!;
                 var reader = new BinaryBufferReader(rootStorageStream);
-                
-                return ReadEntryStream(reader, size, startSector, _shortSectorSize, 0, _ssatSecIdChain);
+
+                return ReadEntryStream(reader, size, startSector, _shortSectorSize, 0, _ssatSecIdChain!);
             }
             else
             {
@@ -406,7 +406,7 @@ public class CompoundDocument
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private ReadOnlyDictionary<string, byte[]> ReadDirectoryEntries(BinaryBufferReader reader, Predicate<string> streamNameMatch, bool? returnOnFirstMatch, List<int> directorySecIdChain)
+        private ReadOnlyDictionary<string, byte[]>? ReadDirectoryEntries(BinaryBufferReader reader, Predicate<string>? streamNameMatch, bool? returnOnFirstMatch, List<int> directorySecIdChain)
         {
             var matchedDirectoryEntries = new Dictionary<string, byte[]>(_directoryEntries.Capacity);
 
@@ -440,7 +440,7 @@ public class CompoundDocument
                 var entryType = (DirectoryEntry.EntryType)reader.ReadByte();
                 var entryName = entryNameSize < 2 ? null : Encoding.Unicode.GetString(entryNameSequence[..entryNameSize]);
 
-                if (i > 0 && streamNameMatch != null && !streamNameMatch(entryName))
+                if (i > 0 && streamNameMatch != null && !streamNameMatch(entryName!))
                 {
                     continue;
                 }
@@ -494,7 +494,7 @@ public class CompoundDocument
 
                 if (entryName != null && streamNameMatch != null && streamNameMatch(entryName))
                 {
-                    matchedDirectoryEntries[entryName] = entry.Stream;
+                    matchedDirectoryEntries[entryName] = entry.Stream!;
 
                     if (returnOnFirstMatch == true)
                     {
@@ -511,8 +511,7 @@ public class CompoundDocument
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static List<int> GetDirectoryStreamSecIdChain(int firstSecIdDirectoryStream, int[] satSecIdChain)
     {
-        // The directory stream of typical documents spans only a handful of sectors; seeding a modest
-        // capacity covers that common case in a single allocation and avoids the List's early growth churn.
+        // The directory stream of typical documents spans only a handful of sectors; seeding a modest capacity covers that common case in a single allocation and avoids the list's early growth churn.
         var directorySecIdChain = new List<int>(16);
 
         var currentSecIdDirectoryStream = firstSecIdDirectoryStream;
@@ -600,10 +599,10 @@ public class CompoundDocument
         /// <summary>
         /// Name of the directory entry.
         /// </summary>
-        public string Name { get; }
+        public string? Name { get; }
 
         /// <summary>
-        /// Type of the directory entry.
+        /// Indicates the <strong>type</strong> of the directory entry.
         /// <para>This could be a <see langword="stream"/> (file), a <see langword="storage"/> (directory) or the <see langword="root storage"/> (internal).</para>
         /// </summary>
         public EntryType Type { get; }
@@ -621,7 +620,7 @@ public class CompoundDocument
         /// <summary>
         /// If the directory entry represents a <see langword="stream"/>, this property contains its data as a raw byte array.
         /// </summary>
-        public byte[] Stream
+        public byte[]? Stream
         {
             get
             {
@@ -639,7 +638,7 @@ public class CompoundDocument
         private readonly int _streamSize;
         private readonly bool _isShortStream;
 
-        internal DirectoryEntry(CompoundDocument document, int id, string name, EntryType type, int firstStreamSecId, int streamSize, bool isShortStream)
+        internal DirectoryEntry(CompoundDocument document, int id, string? name, EntryType type, int firstStreamSecId, int streamSize, bool isShortStream)
         {
             _document = document;
             _firstStreamSecId = firstStreamSecId;

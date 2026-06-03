@@ -41,7 +41,7 @@ public class CdfReadStreamTests
 
         var result = Cdf.OpenAndReadStream(bytes, n => n != null && n.StartsWith("Stream"));
 
-        Assert.Equal("first", Encoding.UTF8.GetString(result));
+        Assert.Equal("first", Encoding.UTF8.GetString(result!));
     }
 
     [Fact]

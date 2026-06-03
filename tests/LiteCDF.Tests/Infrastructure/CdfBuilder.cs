@@ -19,7 +19,7 @@ internal sealed class CdfBuilder
 {
     public const int SectorSize = 512;
     public const int ShortSectorSize = 64;
-    public const int StandardStreamThreshold = 4096;
+    public const int StandardStreamThreshold = 4_096;
     public const int HeaderSize = 512;
     public const int DirectoryEntrySize = 128;
     public const int SecIdSize = 4;
@@ -50,6 +50,7 @@ internal sealed class CdfBuilder
     {
         ArgumentNullException.ThrowIfNull(content);
         _members.Add(new Member(name, content, MemberKind.Stream));
+
         return this;
     }
 
@@ -66,41 +67,13 @@ internal sealed class CdfBuilder
         return this;
     }
 
+    /// <summary>
+    /// Synthesizes the document with the current members and returns its bytes.
+    /// </summary>
     public byte[] Build()
     {
         var sectors = new List<byte[]>();
         var satNext = new Dictionary<int, int>();
-
-        int AllocSector()
-        {
-            sectors.Add(new byte[SectorSize]);
-            return sectors.Count - 1;
-        }
-
-        int WriteStandardChain(byte[] content)
-        {
-            var sectorCount = Math.Max(1, (content.Length + SectorSize - 1) / SectorSize);
-            var ids = new int[sectorCount];
-
-            for (var i = 0; i < sectorCount; i++)
-            {
-                ids[i] = AllocSector();
-            }
-
-            for (var i = 0; i < sectorCount; i++)
-            {
-                var offset = i * SectorSize;
-                var length = Math.Min(SectorSize, content.Length - offset);
-                if (length > 0)
-                {
-                    content.AsSpan(offset, length).CopyTo(sectors[ids[i]]);
-                }
-
-                satNext[ids[i]] = i < sectorCount - 1 ? ids[i + 1] : SecIdEndOfChain;
-            }
-
-            return ids[0];
-        }
 
         // Resolve each member's first SecId and size. Short streams live inside the root short-stream container.
         var firstSecIds = new int[_members.Count];
@@ -252,6 +225,38 @@ internal sealed class CdfBuilder
         }
 
         return file;
+
+        int AllocSector()
+        {
+            sectors.Add(new byte[SectorSize]);
+
+            return sectors.Count - 1;
+        }
+
+        int WriteStandardChain(byte[] content)
+        {
+            var sectorCount = Math.Max(1, (content.Length + SectorSize - 1) / SectorSize);
+            var ids = new int[sectorCount];
+
+            for (var i = 0; i < sectorCount; i++)
+            {
+                ids[i] = AllocSector();
+            }
+
+            for (var i = 0; i < sectorCount; i++)
+            {
+                var offset = i * SectorSize;
+                var length = Math.Min(SectorSize, content.Length - offset);
+                if (length > 0)
+                {
+                    content.AsSpan(offset, length).CopyTo(sectors[ids[i]]);
+                }
+
+                satNext[ids[i]] = i < sectorCount - 1 ? ids[i + 1] : SecIdEndOfChain;
+            }
+
+            return ids[0];
+        }
     }
 
     private static void WriteHeader(byte[] file, int satSectorCount, int firstDirSecId, int firstSsatSecId, int ssatSectorCount, int msatFirstEntry)
@@ -297,19 +302,17 @@ internal sealed class CdfBuilder
         BinaryPrimitives.WriteInt32LittleEndian(directory.AsSpan(baseOffset + 120), size);
     }
 
-    /// <summary>File byte offset of the SAT entry for <paramref name="secId"/> (its "next sector" pointer).</summary>
-    public int SatEntryOffset(int secId) => HeaderSize + SatSectorIndex * SectorSize + secId * SecIdSize;
+    /// <summary>Returns the file byte offset of the SAT entry for the specified sector ID (its "next sector" pointer).</summary>
+    public int GetSatEntryOffset(int secId) => HeaderSize + SatSectorIndex * SectorSize + secId * SecIdSize;
 
-    /// <summary>File byte offset of directory entry <paramref name="directoryIndex"/> (0 = root, 1.. = members).</summary>
-    public int DirectoryEntryOffset(int directoryIndex)
+    /// <summary>Returns the file byte offset for the specified directory entry index (0 = root, 1.. = members).</summary>
+    public int GetDirectoryEntryOffset(int directoryIndex)
     {
         var sectorIndex = directoryIndex / EntriesPerSector;
         var offsetInSector = directoryIndex % EntriesPerSector * DirectoryEntrySize;
+
         return HeaderSize + _directorySecIds[sectorIndex] * SectorSize + offsetInSector;
     }
-
-    /// <summary>Number of directory entries emitted (real + empty padding).</summary>
-    public int DirectoryEntryCount => _directoryEntryCount;
 
     public const int HeaderMsatSatSecIdCount = 109; // SAT-sector SecIds held directly in the header's first-part MSAT
 
@@ -335,37 +338,10 @@ internal sealed class CdfBuilder
         var sectors = new List<byte[]>();
         var satNext = new Dictionary<int, int>();
 
-        int AllocSector()
-        {
-            sectors.Add(new byte[SectorSize]);
-            return sectors.Count - 1;
-        }
-
-        int WriteStandardChain(byte[] data)
-        {
-            var count = Math.Max(1, (data.Length + SectorSize - 1) / SectorSize);
-            var ids = new int[count];
-            for (var i = 0; i < count; i++)
-            {
-                ids[i] = AllocSector();
-            }
-            for (var i = 0; i < count; i++)
-            {
-                var offset = i * SectorSize;
-                var length = Math.Min(SectorSize, data.Length - offset);
-                if (length > 0)
-                {
-                    data.AsSpan(offset, length).CopyTo(sectors[ids[i]]);
-                }
-                satNext[ids[i]] = i < count - 1 ? ids[i + 1] : SecIdEndOfChain;
-            }
-            return ids[0];
-        }
-
         var streamFirstSec = WriteStandardChain(content);
 
         // Directory: root + the single stream member, padded to a full sector.
-        var paddedEntryCount = (1 + 1 + EntriesPerSector - 1) / EntriesPerSector * EntriesPerSector;
+        const int paddedEntryCount = (1 + 1 + EntriesPerSector - 1) / EntriesPerSector * EntriesPerSector;
         var directory = new byte[paddedEntryCount * DirectoryEntrySize];
 
         WriteDirectoryEntry(directory, 0, "Root Entry", entryType: 5,
@@ -383,6 +359,7 @@ internal sealed class CdfBuilder
         {
             satSecs[i] = AllocSector();
         }
+
         var extendedMsatSec = AllocSector();
 
         // Mark the SAT and MSAT sectors in the allocation table so the chain stays self-consistent.
@@ -393,9 +370,10 @@ internal sealed class CdfBuilder
         satNext[extendedMsatSec] = SecIdMsat;
 
         // Build the global SAT: satSectorCount * 128 entries, defaulting to free, then apply satNext.
-        var totalSatEntries = satSectorCount * SecIdsPerSector;
+        const int totalSatEntries = satSectorCount * SecIdsPerSector;
         var sat = new int[totalSatEntries];
         Array.Fill(sat, SecIdFree);
+
         foreach (var (sec, next) in satNext)
         {
             sat[sec] = next;
@@ -439,6 +417,35 @@ internal sealed class CdfBuilder
         }
 
         return (file, streamName, content);
+
+        int AllocSector()
+        {
+            sectors.Add(new byte[SectorSize]);
+
+            return sectors.Count - 1;
+        }
+
+        int WriteStandardChain(byte[] data)
+        {
+            var count = Math.Max(1, (data.Length + SectorSize - 1) / SectorSize);
+            var ids = new int[count];
+            for (var i = 0; i < count; i++)
+            {
+                ids[i] = AllocSector();
+            }
+            for (var i = 0; i < count; i++)
+            {
+                var offset = i * SectorSize;
+                var length = Math.Min(SectorSize, data.Length - offset);
+                if (length > 0)
+                {
+                    data.AsSpan(offset, length).CopyTo(sectors[ids[i]]);
+                }
+                satNext[ids[i]] = i < count - 1 ? ids[i + 1] : SecIdEndOfChain;
+            }
+
+            return ids[0];
+        }
     }
 
     public const int MsatSatSecIdsPerSector = SecIdsPerSector - 1; // 127; the 128th slot chains to the next MSAT sector
@@ -461,7 +468,7 @@ internal sealed class CdfBuilder
         const int msatExtraSectorCount = 2;
         const string streamName = "Big";
 
-        var secIdsInSecondMsat = satSectorCount - HeaderMsatSatSecIdCount - MsatSatSecIdsPerSector; // 4
+        const int secIdsInSecondMsat = satSectorCount - HeaderMsatSatSecIdCount - MsatSatSecIdsPerSector; // 4
 
         var content = new byte[StandardStreamThreshold + 137];
         for (var i = 0; i < content.Length; i++)
@@ -472,36 +479,9 @@ internal sealed class CdfBuilder
         var sectors = new List<byte[]>();
         var satNext = new Dictionary<int, int>();
 
-        int AllocSector()
-        {
-            sectors.Add(new byte[SectorSize]);
-            return sectors.Count - 1;
-        }
-
-        int WriteStandardChain(byte[] data)
-        {
-            var count = Math.Max(1, (data.Length + SectorSize - 1) / SectorSize);
-            var ids = new int[count];
-            for (var i = 0; i < count; i++)
-            {
-                ids[i] = AllocSector();
-            }
-            for (var i = 0; i < count; i++)
-            {
-                var offset = i * SectorSize;
-                var length = Math.Min(SectorSize, data.Length - offset);
-                if (length > 0)
-                {
-                    data.AsSpan(offset, length).CopyTo(sectors[ids[i]]);
-                }
-                satNext[ids[i]] = i < count - 1 ? ids[i + 1] : SecIdEndOfChain;
-            }
-            return ids[0];
-        }
-
         var streamFirstSec = WriteStandardChain(content);
 
-        var paddedEntryCount = (1 + 1 + EntriesPerSector - 1) / EntriesPerSector * EntriesPerSector;
+        const int paddedEntryCount = (1 + 1 + EntriesPerSector - 1) / EntriesPerSector * EntriesPerSector;
         var directory = new byte[paddedEntryCount * DirectoryEntrySize];
 
         WriteDirectoryEntry(directory, 0, "Root Entry", entryType: 5,
@@ -517,7 +497,7 @@ internal sealed class CdfBuilder
         // they only make the document physically large. The total physical sector count must not exceed what the
         // SAT can map (satSectorCount * 128 = 30,720), so every sector — including the SAT/MSAT sectors themselves —
         // has a SAT entry. 30,720 sectors + header is ~15 MB.
-        var totalPhysicalSectors = satSectorCount * SecIdsPerSector;
+        const int totalPhysicalSectors = satSectorCount * SecIdsPerSector;
         while (sectors.Count < totalPhysicalSectors - satSectorCount - msatExtraSectorCount)
         {
             AllocSector();
@@ -539,7 +519,7 @@ internal sealed class CdfBuilder
         satNext[firstMsatSec] = SecIdMsat;
         satNext[secondMsatSec] = SecIdMsat;
 
-        var totalSatEntries = satSectorCount * SecIdsPerSector;
+        const int totalSatEntries = satSectorCount * SecIdsPerSector;
         var sat = new int[totalSatEntries];
         Array.Fill(sat, SecIdFree);
         foreach (var (sec, next) in satNext)
@@ -594,6 +574,37 @@ internal sealed class CdfBuilder
         }
 
         return (file, streamName, content);
+
+        int AllocSector()
+        {
+            sectors.Add(new byte[SectorSize]);
+
+            return sectors.Count - 1;
+        }
+
+        int WriteStandardChain(byte[] data)
+        {
+            var count = Math.Max(1, (data.Length + SectorSize - 1) / SectorSize);
+            var ids = new int[count];
+
+            for (var i = 0; i < count; i++)
+            {
+                ids[i] = AllocSector();
+            }
+
+            for (var i = 0; i < count; i++)
+            {
+                var offset = i * SectorSize;
+                var length = Math.Min(SectorSize, data.Length - offset);
+                if (length > 0)
+                {
+                    data.AsSpan(offset, length).CopyTo(sectors[ids[i]]);
+                }
+                satNext[ids[i]] = i < count - 1 ? ids[i + 1] : SecIdEndOfChain;
+            }
+
+            return ids[0];
+        }
     }
 
     /// <summary>
@@ -629,9 +640,11 @@ internal sealed class CdfBuilder
         // structural sectors, which keeps the chain self-consistent for the parts the reader actually walks.
         const int satSec = 1;
         var sat = new int[SecIdsPerSector];
+
         Array.Fill(sat, SecIdFree);
         sat[directorySec] = SecIdEndOfChain;
         sat[satSec] = SecIdSat;
+
         for (var e = 0; e < SecIdsPerSector; e++)
         {
             BinaryPrimitives.WriteInt32LittleEndian(sectors[satSec].AsSpan(e * SecIdSize), sat[e]);

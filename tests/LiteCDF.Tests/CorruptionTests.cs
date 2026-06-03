@@ -62,7 +62,7 @@ public class CorruptionTests
     {
         var builder = new CdfBuilder().AddStream("A", "a");
         var bytes = builder.Build();
-        bytes[builder.DirectoryEntryOffset(0) + 66] = 2; // change root entry type to Stream
+        bytes[builder.GetDirectoryEntryOffset(0) + 66] = 2; // change root entry type to Stream
 
         var ex = Assert.Throws<CdfException>(() => Cdf.Open(bytes));
         Assert.Equal(Errors.FirstDirectoryEntryMustBeRootStorage, ex.Message);
@@ -73,7 +73,7 @@ public class CorruptionTests
     {
         var builder = new CdfBuilder().AddStream("A", "a");
         var bytes = builder.Build();
-        PatchUInt16(bytes, builder.DirectoryEntryOffset(1) + 64, 66); // -> name length 64 > 62
+        PatchUInt16(bytes, builder.GetDirectoryEntryOffset(1) + 64, 66); // -> name length 64 > 62
 
         var ex = Assert.Throws<CdfException>(() => Cdf.Open(bytes));
         Assert.Equal(Errors.DirectoryEntryNameTooLong, ex.Message);
@@ -84,7 +84,7 @@ public class CorruptionTests
     {
         var builder = new CdfBuilder().AddStream("A", "a");
         var bytes = builder.Build();
-        PatchInt32(bytes, builder.SatEntryOffset(builder.DirectoryFirstSecId), 500); // next-sector points out of range
+        PatchInt32(bytes, builder.GetSatEntryOffset(builder.DirectoryFirstSecId), 500); // next-sector points out of range
 
         var ex = Assert.Throws<CdfException>(() => Cdf.Open(bytes));
         Assert.Equal(Errors.InvalidSecIdReference, ex.Message);
@@ -95,7 +95,7 @@ public class CorruptionTests
     {
         var builder = new CdfBuilder().AddStream("A", "a");
         var bytes = builder.Build();
-        PatchInt32(bytes, builder.SatEntryOffset(builder.DirectoryFirstSecId), builder.DirectoryFirstSecId); // self-loop
+        PatchInt32(bytes, builder.GetSatEntryOffset(builder.DirectoryFirstSecId), builder.DirectoryFirstSecId); // self-loop
 
         var ex = Assert.Throws<CdfException>(() => Cdf.Open(bytes));
         Assert.Equal(Errors.CyclicSecIdChain, ex.Message);
@@ -106,7 +106,7 @@ public class CorruptionTests
     {
         var builder = new CdfBuilder().AddStream("A", "a").AddStream("B", "b");
         var bytes = builder.Build();
-        PatchInt32(bytes, builder.DirectoryEntryOffset(2) + 68, 1); // B's left child -> A, forming a cycle
+        PatchInt32(bytes, builder.GetDirectoryEntryOffset(2) + 68, 1); // B's left child -> A, forming a cycle
 
         var ex = Assert.Throws<CdfException>(() => Cdf.Open(bytes, rootStorageDescendantsOnly: true));
         Assert.Equal(Errors.CyclicChildDirectoryEntryReference, ex.Message);
@@ -117,7 +117,7 @@ public class CorruptionTests
     {
         var builder = new CdfBuilder().AddStream("A", "a");
         var bytes = builder.Build();
-        PatchInt32(bytes, builder.DirectoryEntryOffset(1) + 68, 999); // A's left child -> nonexistent DID
+        PatchInt32(bytes, builder.GetDirectoryEntryOffset(1) + 68, 999); // A's left child -> nonexistent DID
 
         var ex = Assert.Throws<CdfException>(() => Cdf.Open(bytes, rootStorageDescendantsOnly: true));
         Assert.StartsWith("The referred child directory entry", ex.Message);
@@ -143,7 +143,7 @@ public class CorruptionTests
         var builder = new CdfBuilder().AddStream("Tiny", "tiny"); // creates an SSAT + container
         var bytes = builder.Build();
 
-        PatchInt32(bytes, builder.DirectoryEntryOffset(0) + 120, 0); // root storage stream size -> 0
+        PatchInt32(bytes, builder.GetDirectoryEntryOffset(0) + 120, 0); // root storage stream size -> 0
 
         var ex = Assert.Throws<CdfException>(() => Cdf.Open(bytes));
         Assert.Equal(Errors.ShortStreamContainerStreamSizeIsZero, ex.Message);
@@ -192,7 +192,7 @@ public class CorruptionTests
         var bytes = builder.Build();
 
         // Point the first SSAT SecId so far out that HEADER_SIZE + secId * sectorSize exceeds the buffer.
-        PatchInt32(bytes, 0x3C, 100000);
+        PatchInt32(bytes, 0x3C, 100_000);
 
         var ex = Assert.Throws<CdfException>(() => Cdf.Open(bytes));
         Assert.Equal(Errors.UnexpectedEndOfStream, ex.Message);
@@ -213,12 +213,12 @@ public class CorruptionTests
     public void Stream_chain_terminates_early_throws_unexpected_end_of_stream()
     {
         // A multi-sector standard stream so ReadEntryStream loops more than once.
-        var builder = new CdfBuilder().AddStream("Multi", new string('z', 5000));
+        var builder = new CdfBuilder().AddStream("Multi", new string('z', 5_000));
         var bytes = builder.Build();
 
         // Find the stream's first sector, then break the chain so the second iteration hits a free SecId.
-        var firstStreamSecId = BinaryPrimitives.ReadInt32LittleEndian(bytes.AsSpan(builder.DirectoryEntryOffset(1) + 116));
-        PatchInt32(bytes, builder.SatEntryOffset(firstStreamSecId), CdfBuilder.SecIdFree);
+        var firstStreamSecId = BinaryPrimitives.ReadInt32LittleEndian(bytes.AsSpan(builder.GetDirectoryEntryOffset(1) + 116));
+        PatchInt32(bytes, builder.GetSatEntryOffset(firstStreamSecId), CdfBuilder.SecIdFree);
 
         var entry = Cdf.Open(bytes).DirectoryEntries.Single(e => e.Name == "Multi");
 

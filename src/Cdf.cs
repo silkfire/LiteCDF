@@ -9,7 +9,7 @@ using System.Linq;
 
 
 /// <summary>
-/// A static class for reading compound documents.
+/// A static helper class for reading compound documents.
 /// </summary>
 public static class Cdf
 {
@@ -67,14 +67,14 @@ public static class Cdf
     /// <param name="filepath">Path to the document.</param>
     /// <param name="streamNameMatch">A predicate applied to the name of the stream that must be satisfied to determine which stream to read.</param>
     /// <param name="rootStorageDescendantOnly">If <see langword="true"/>, will only return the stream if it also is a descendant of the root storage.</param>
-    public static byte[] OpenAndReadStream(string filepath, Predicate<string> streamNameMatch, bool rootStorageDescendantOnly = false)
+    public static byte[]? OpenAndReadStream(string filepath, Predicate<string> streamNameMatch, bool rootStorageDescendantOnly = false)
     {
         if (streamNameMatch == null)
         {
             throw new CdfException(Errors.StreamNamePredicateNull);
         }
 
-        return new CompoundDocument().Mount(filepath, streamNameMatch, true, rootStorageDescendantOnly).FirstOrDefault().Value;
+        return new CompoundDocument().Mount(filepath, streamNameMatch, true, rootStorageDescendantOnly)!.FirstOrDefault().Value;
     }
 
     /// <summary>
@@ -83,7 +83,7 @@ public static class Cdf
     /// <param name="data">A byte array to read data from.</param>
     /// <param name="streamNameMatch">A predicate applied to the name of the stream that must be satisfied to determine which stream to read.</param>
     /// <param name="rootStorageDescendantOnly">If <see langword="true"/>, will only return the stream if it also is a descendant of the root storage.</param>
-    public static byte[] OpenAndReadStream(byte[] data, Predicate<string> streamNameMatch, bool rootStorageDescendantOnly = false)
+    public static byte[]? OpenAndReadStream(byte[] data, Predicate<string> streamNameMatch, bool rootStorageDescendantOnly = false)
     {
         if (data == null || data.Length == 0)
         {
@@ -95,7 +95,7 @@ public static class Cdf
             throw new CdfException(Errors.StreamNamePredicateNull);
         }
 
-        return new CompoundDocument().Mount(data, streamNameMatch, true, rootStorageDescendantOnly).FirstOrDefault().Value;
+        return new CompoundDocument().Mount(data, streamNameMatch, true, rootStorageDescendantOnly)!.FirstOrDefault().Value;
     }
 
     /// <summary>
@@ -104,7 +104,7 @@ public static class Cdf
     /// <param name="stream">A stream to read data from.</param>
     /// <param name="streamNameMatch">A predicate applied to the name of the stream that must be satisfied to determine which stream to read.</param>
     /// <param name="rootStorageDescendantOnly">If <see langword="true"/>, will only return the stream if it also is a descendant of the root storage.</param>
-    public static byte[] OpenAndReadStream(Stream stream, Predicate<string> streamNameMatch, bool rootStorageDescendantOnly = false)
+    public static byte[]? OpenAndReadStream(Stream stream, Predicate<string> streamNameMatch, bool rootStorageDescendantOnly = false)
     {
         if (stream == null || stream.Length == 0)
         {
@@ -116,7 +116,7 @@ public static class Cdf
             throw new CdfException(Errors.StreamNamePredicateNull);
         }
 
-        return new CompoundDocument().Mount(stream.ToByteArray(), streamNameMatch, true, rootStorageDescendantOnly).FirstOrDefault().Value;
+        return new CompoundDocument().Mount(stream.ToByteArray(), streamNameMatch, true, rootStorageDescendantOnly)!.FirstOrDefault().Value;
     }
 
     /// <summary>
@@ -133,7 +133,7 @@ public static class Cdf
             throw new CdfException(Errors.StreamNamePredicateNull);
         }
 
-        return new CompoundDocument().Mount(filepath, streamNameMatch, false, rootStorageDescendantsOnly);
+        return new CompoundDocument().Mount(filepath, streamNameMatch, false, rootStorageDescendantsOnly)!;
     }
 
     /// <summary>
@@ -155,7 +155,7 @@ public static class Cdf
             throw new CdfException(Errors.StreamNamePredicateNull);
         }
 
-        return new CompoundDocument().Mount(data, streamNameMatch, false, rootStorageDescendantsOnly);
+        return new CompoundDocument().Mount(data, streamNameMatch, false, rootStorageDescendantsOnly)!;
     }
 
     /// <summary>
@@ -177,6 +177,6 @@ public static class Cdf
             throw new CdfException(Errors.StreamNamePredicateNull);
         }
 
-        return new CompoundDocument().Mount(stream.ToByteArray(), streamNameMatch, false, rootStorageDescendantsOnly);
+        return new CompoundDocument().Mount(stream.ToByteArray(), streamNameMatch, false, rootStorageDescendantsOnly)!;
     }
 }
