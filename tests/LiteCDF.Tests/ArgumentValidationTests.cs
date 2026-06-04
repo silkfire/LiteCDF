@@ -65,7 +65,7 @@ public class ArgumentValidationTests
     [Fact]
     public void Open_nonexistent_file_throws_cdf_exception()
     {
-        var path = Path.Combine(Path.GetTempPath(), $"litecdf-missing-{Path.GetRandomFileName()}.cfb");
+        var path = Path.Combine(Path.GetTempPath(), $"litecdf-missing-{Path.GetRandomFileName()}.cf");
 
         Assert.Throws<CdfException>(() => Cdf.Open(path));
     }
@@ -80,7 +80,7 @@ public class ArgumentValidationTests
     [Fact]
     public void OpenAndReadStream_filepath_null_predicate_throws()
     {
-        var ex = Assert.Throws<CdfException>(static () => Cdf.OpenAndReadStream("anything.cfb", null!));
+        var ex = Assert.Throws<CdfException>(static () => Cdf.OpenAndReadStream("anything.cf", null!));
         Assert.Equal(Errors.StreamNamePredicateNull, ex.Message);
     }
 
@@ -112,7 +112,7 @@ public class ArgumentValidationTests
     [Fact]
     public void OpenAndReadStream_nonexistent_file_throws_cdf_exception()
     {
-        var path = Path.Combine(Path.GetTempPath(), $"litecdf-missing-{Path.GetRandomFileName()}.cfb");
+        var path = Path.Combine(Path.GetTempPath(), $"litecdf-missing-{Path.GetRandomFileName()}.cf");
 
         Assert.Throws<CdfException>(() => Cdf.OpenAndReadStream(path, n => true));
     }
@@ -127,7 +127,7 @@ public class ArgumentValidationTests
     [Fact]
     public void OpenAndReadMultipleStreams_filepath_null_predicate_throws()
     {
-        var ex = Assert.Throws<CdfException>(static () => Cdf.OpenAndReadMultipleStreams("anything.cfb", null!));
+        var ex = Assert.Throws<CdfException>(static () => Cdf.OpenAndReadMultipleStreams("anything.cf", null!));
         Assert.Equal(Errors.StreamNamePredicateNull, ex.Message);
     }
 
@@ -159,7 +159,7 @@ public class ArgumentValidationTests
     [Fact]
     public void OpenAndReadMultipleStreams_nonexistent_file_throws_cdf_exception()
     {
-        var path = Path.Combine(Path.GetTempPath(), $"litecdf-missing-{Path.GetRandomFileName()}.cfb");
+        var path = Path.Combine(Path.GetTempPath(), $"litecdf-missing-{Path.GetRandomFileName()}.cf");
 
         Assert.Throws<CdfException>(() => Cdf.OpenAndReadMultipleStreams(path, n => true));
     }

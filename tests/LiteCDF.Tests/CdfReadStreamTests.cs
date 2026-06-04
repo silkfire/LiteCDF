@@ -69,7 +69,7 @@ public class CdfReadStreamTests
 
         using var ms = new MemoryStream(bytes);
 
-        var path = Path.Combine(Path.GetTempPath(), $"litecdf-{Path.GetRandomFileName()}.cfb");
+        var path = Path.Combine(Path.GetTempPath(), $"litecdf-{Path.GetRandomFileName()}.cf");
         File.WriteAllBytes(path, bytes);
 
         try
@@ -129,7 +129,7 @@ public class CdfReadStreamTests
     {
         var bytes = new CdfBuilder().AddStream("F1", "1").AddStream("F2", "2").Build();
 
-        var path = Path.Combine(Path.GetTempPath(), $"litecdf-{Path.GetRandomFileName()}.cfb");
+        var path = Path.Combine(Path.GetTempPath(), $"litecdf-{Path.GetRandomFileName()}.cf");
         File.WriteAllBytes(path, bytes);
 
         try
